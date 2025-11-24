@@ -1,5 +1,7 @@
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
+  GestureResponderEvent,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -10,21 +12,56 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { errorSwal } from "../services/api.service";
+import { authService } from "../services/auth.service";
+import { UsuarioService } from "../services/usuario.service";
+
+interface ILoginForm {
+  email: string;
+  senha: string;
+}
 
 export default function LoginScreen() {
-  const [password, setPassword] = useState("");
-  const [email, setEmail] = useState("");
+  const [loginForm, setLoginForm] = useState<ILoginForm>({
+    email: "",
+    senha: "",
+  });
 
-  const handleLogin = () => {
-    // empty
+  const router = useRouter();
+  const usuarioService = new UsuarioService();
+
+  const handleLogin = (e: GestureResponderEvent) => {
+    e.preventDefault();
+
+    usuarioService
+      .login(loginForm)
+      .then(async ({ data: { dados } }) => {
+        await authService.saveToken(dados);
+
+        if (await authService.isAuthenticatedAdmin()) {
+          router.push("/admin");
+        } else if (await authService.isAuthenticated()) {
+          router.push("/aluno");
+        }
+      })
+      .catch(errorSwal);
   };
 
+  // useEffect(() => {
+  //   if (authService.isAuthenticatedAdmin()) {
+  //     router.push("/admin");
+  //   } else if (authService.isAuthenticated()) {
+  //     router.push("/aluno");
+  //   }
+  // }, [router]);
+
   const handleNavigateSignUp = () => {
-    // empty
+    router.push("/cadastro");
   };
 
   return (
-    <View style={styles.safe}>
+    <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
 
       <KeyboardAvoidingView
@@ -41,23 +78,23 @@ export default function LoginScreen() {
             <View style={styles.fieldBlock}>
               <TextInput
                 style={styles.input}
-                placeholder="Senha"
+                placeholder="E-mail"
                 placeholderTextColor="#1d4fa8"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={loginForm.email}
+                onChangeText={(email) => setLoginForm({ ...loginForm, email })}
               />
             </View>
 
             <View style={styles.fieldBlock}>
               <TextInput
                 style={styles.input}
-                placeholder="E-mail"
+                placeholder="Senha"
                 placeholderTextColor="#1d4fa8"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
+                secureTextEntry
+                value={loginForm.senha}
+                onChangeText={(senha) => setLoginForm({ ...loginForm, senha })}
               />
             </View>
 
@@ -78,7 +115,7 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
 const BLUE = "#4A82F8";
@@ -87,6 +124,7 @@ const GREY_BG = "#dddddd";
 
 const styles = StyleSheet.create({
   safe: {
+    display: "flex",
     flex: 1,
     backgroundColor: GREY_BG,
   },
@@ -121,29 +159,28 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   flex: {
-    flex: 1,
+    display: "flex",
+    height: "100%",
+  },
+  scroll: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-  },
-  scroll: {
-    flexGrow: 1,
-    justifyContent: "center",
     paddingHorizontal: 28,
     paddingBottom: 40,
+    width: "100%",
+    height: "100%",
   },
   card: {
     backgroundColor: "#ffffff",
     borderRadius: 6,
-    paddingVertical: 56,
+    paddingVertical: 20,
     paddingHorizontal: 36,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
+    boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.08)",
     elevation: 4,
     maxWidth: 500,
-    width: "100%",
+    width: "auto",
+    marginVertical: "auto",
   },
   title: {
     fontSize: 34,
@@ -173,10 +210,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 4 },
+    boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.15)",
     elevation: 3,
   },
   buttonText: {

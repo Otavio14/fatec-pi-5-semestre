@@ -145,10 +145,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 4 },
+    boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.2)",
     elevation: 5,
   },
   camBody: {
@@ -215,10 +212,7 @@ const styles = StyleSheet.create({
     borderRadius: 36,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 6 },
+    boxShadow: "0px 6px 8px rgba(0, 0, 0, 0.25)",
     elevation: 7,
   },
   submitText: {
