@@ -1,7 +1,8 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  GestureResponderEvent,
+  ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -13,43 +14,187 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { authService } from "../services/auth.service";
-import { UsuarioService } from "../services/usuario.service";
-import { IQuestao } from "../types/questao.type";
+import { apiService } from "../services/api.service";
 
-interface ILoginForm {
-  email: string;
-  senha: string;
+const BLUE = "#4A82F8";
+const ORANGE = "#FFA747";
+const GREY_BG = "#dddddd";
+
+interface IQuestaoComReferencia {
+  id: number;
+  id_questao: number;
+  id_referencia: number;
+  prova: string;
+  questao: any;
+  referencia: any;
+  alternativas: any[];
+}
+
+interface IRedacaoCompleta {
+  id_redacao: number;
+  redacaoInfo: any;
+  provaInfo: any;
+  referencias: any[];
 }
 
 export default function SimuladoScreen() {
-  const [questoes, setQuestoes] = useState<Array<IQuestao>>([
-    {
-      id_prova: 1,
-      id: 1,
-      numero: 1,
-      texto: "Sample question 1 text",
-    },
-    {
-      id_prova: 1,
-      id: 2,
-      numero: 2,
-      texto: "Sample question 2 text",
-    },
-    {
-      id_prova: 1,
-      id: 3,
-      numero: 3,
-      texto: "Sample question 3 text",
-    },
-  ]);
+  const [questoesComReferencias, setQuestoesComReferencias] = useState<
+    IQuestaoComReferencia[]
+  >([]);
+  const [respostasSelecionadas, setRespostasSelecionadas] = useState<{
+    [questaoId: number]: number;
+  }>({});
+  const [resultado, setResultado] = useState<{
+    [questaoId: number]: boolean | null;
+  }>({});
+  const [essayText, setEssayText] = useState("");
+  const [redacaoSorteada, setRedacaoSorteada] =
+    useState<IRedacaoCompleta | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const router = useRouter();
-  const usuarioService = new UsuarioService();
+
+  function embaralhar<T>(array: T[]): T[] {
+    return array
+      .map((item) => ({ item, sort: Math.random() }))
+      .sort((a, b) => a.sort - b.sort)
+      .map(({ item }) => item);
+  }
+
+  useEffect(() => {
+    apiService.get("questoes-referencias").then(async (res) => {
+      const questoesReferencias = res.data.dados;
+      const questoesComReferencias = await Promise.all(
+        questoesReferencias.map(async (questoesReferencias: any) => {
+          const questoesInfo = await apiService.get(
+            `/questoes/${questoesReferencias.id_questao}`,
+          );
+          const referenciasInfo = await apiService.get(
+            `/referencias/${questoesReferencias.id_referencia}`,
+          );
+          const provaInfo = await apiService.get(
+            `/provas/${questoesInfo.data.dados.id_prova}`,
+          );
+          const altRes = await apiService.get(
+            `/alternativas?questaoId=${questoesInfo.data.dados.id}`,
+          );
+
+          return {
+            ...questoesReferencias,
+            prova: provaInfo.data.dados.nome,
+            alternativas: altRes.data.dados || [],
+            questao: questoesInfo.data.dados,
+            referencia: referenciasInfo.data.dados,
+          };
+        }),
+      );
+
+      const questoesEmbaralhadas = embaralhar(questoesComReferencias).slice(
+        0,
+        10,
+      );
+      setQuestoesComReferencias(questoesEmbaralhadas);
+      setLoading(false);
+    });
+  }, []);
+
+  useEffect(() => {
+    apiService
+      .get("/redacoes-referencias")
+      .then(async (res) => {
+        const redacoes_referencias = res.data.dados;
+
+        const idsRedacoes = [
+          ...new Set(redacoes_referencias.map((r: any) => r.id_redacao)),
+        ];
+
+        const redacoesAgrupadas = await Promise.all(
+          idsRedacoes.map(async (id_redacao: any) => {
+            const referenciasDaRedacao = redacoes_referencias.filter(
+              (r: any) => r.id_redacao === id_redacao,
+            );
+
+            const redacoesInfo = await apiService.get(
+              `/redacoes/${id_redacao}`,
+            );
+            const provaInfo = await apiService.get(
+              `/provas/${redacoesInfo.data.dados.id_prova}`,
+            );
+
+            const referencias = await Promise.all(
+              referenciasDaRedacao.map(async (item: any) => {
+                const referenciaInfo = await apiService.get(
+                  `/referencias/${item.id_referencia}`,
+                );
+                return referenciaInfo.data.dados;
+              }),
+            );
+
+            return {
+              id_redacao: Number(id_redacao),
+              redacaoInfo: redacoesInfo,
+              provaInfo,
+              referencias,
+            };
+          }),
+        );
+
+        const redacaoInicial =
+          redacoesAgrupadas[
+            Math.floor(Math.random() * redacoesAgrupadas.length)
+          ];
+        setRedacaoSorteada(redacaoInicial);
+      })
+      .catch((err) => {
+        console.log("Erro ao buscar redações ou referências:", err);
+      });
+  }, []);
+
+  const handleSelecionar = (questaoId: number, alternativaId: number) => {
+    setRespostasSelecionadas((prev) => ({
+      ...prev,
+      [questaoId]: alternativaId,
+    }));
+    setResultado((prev) => ({
+      ...prev,
+      [questaoId]: null,
+    }));
+  };
+
+  const handleResponderTodas = () => {
+    const novoResultado: { [questaoId: number]: boolean } = {};
+
+    questoesComReferencias.forEach((questao) => {
+      const alternativaSelecionadaId = respostasSelecionadas[questao.id];
+      const alternativa = questao.alternativas.find(
+        (alt: any) => alt.id === alternativaSelecionadaId,
+      );
+      const correta = alternativa?.correta || false;
+      novoResultado[questao.id] = correta;
+    });
+
+    setResultado(novoResultado);
+  };
+
+  if (loading || questoesComReferencias.length === 0) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={BLUE} />
+          <Text style={styles.loadingText}>Gerando Simulado...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const redacao = redacaoSorteada;
+  const todasRespondidas =
+    Object.keys(respostasSelecionadas).length ===
+    questoesComReferencias.length;
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
+      <StatusBar barStyle="dark-content" backgroundColor={GREY_BG} />
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -59,182 +204,501 @@ export default function SimuladoScreen() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.header}>
-            <Text style={styles.title}>Simulado</Text>
-            <View style={styles.headerQuestoes}>
-              {questoes.map((questao, index) => (
-                <TouchableOpacity key={index} style={styles.headerQuestao}>
-                  <Text>{questao.numero}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-          <View style={styles.questao}>
-            <View style={styles.questionCard}>
-              <Text style={styles.question}>{questoes[0].texto}</Text>
-            </View>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.push("/")}
+          >
+            <Text style={styles.backButtonText}>Voltar</Text>
+          </TouchableOpacity>
 
-            {/* <View style={styles.optionsBlock}>
-              {OPTIONS.map((opt) => {
-                const isSelected = opt === selected;
-                return (
-                  <TouchableOpacity
-                    key={opt}
-                    style={[
-                      styles.optionRow,
-                      isSelected && styles.optionRowSelected,
-                    ]}
-                    onPress={() => handleSelect(opt)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Selecionar opção ${opt}`}
-                  >
-                    <View
-                      style={[
-                        styles.bullet,
-                        isSelected && styles.bulletSelected,
-                      ]}
+          {questoesComReferencias.map((questao) => {
+            const respondida =
+              resultado.hasOwnProperty(questao.id) &&
+              resultado[questao.id] !== null;
+
+            return (
+              <View
+                key={questao.id}
+                style={[
+                  styles.questaoCard,
+                  respondida && styles.questaoCardRespondida,
+                ]}
+              >
+                <View style={styles.provaBadge}>
+                  <Text style={styles.provaBadgeText}>{questao.prova}</Text>
+                </View>
+
+                <View style={styles.referenciaBox}>
+                  <Text style={styles.referenciaTitle}>
+                    {questao.referencia.titulo}
+                  </Text>
+                  <Text style={styles.referenciaLegend}>
+                    {questao.referencia.legenda}
+                  </Text>
+                  <Text style={styles.referenciaText}>
+                    {questao.referencia.texto}
+                  </Text>
+                  {questao.referencia.url_imagem ? (
+                    <Image
+                      style={styles.referenciaImage}
+                      source={{ uri: questao.referencia.url_imagem }}
+                      resizeMode="contain"
                     />
-                    <Text style={styles.optionText}>{opt}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View> */}
-          </View>
+                  ) : null}
+                </View>
+
+                <Text
+                  style={[
+                    styles.questaoText,
+                    respondida && styles.questaoTextRespondida,
+                  ]}
+                >
+                  {questao.questao.texto}
+                </Text>
+
+                <View style={styles.alternativasContainer}>
+                  {questao.alternativas.map((alternativa: any) =>
+                    alternativa.id_questao === questao.id ? (
+                      <TouchableOpacity
+                        key={alternativa.id}
+                        style={[
+                          styles.alternativaRow,
+                          respostasSelecionadas[questao.id] ===
+                            alternativa.id && styles.alternativaRowSelected,
+                          respondida && styles.alternativaRowDisabled,
+                        ]}
+                        onPress={() =>
+                          !respondida &&
+                          handleSelecionar(questao.id, alternativa.id)
+                        }
+                        disabled={respondida}
+                      >
+                        <View
+                          style={[
+                            styles.radioButton,
+                            respostasSelecionadas[questao.id] ===
+                              alternativa.id && styles.radioButtonSelected,
+                          ]}
+                        />
+                        <Text style={styles.alternativaText}>
+                          <Text style={styles.alternativaNome}>
+                            ({alternativa.nome})
+                          </Text>{" "}
+                          {alternativa.texto}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null,
+                  )}
+                </View>
+
+                {resultado[questao.id] !== undefined &&
+                  resultado[questao.id] !== null && (
+                    <Text
+                      style={[
+                        styles.resultadoText,
+                        resultado[questao.id]
+                          ? styles.resultadoCorreto
+                          : styles.resultadoIncorreto,
+                      ]}
+                    >
+                      {resultado[questao.id]
+                        ? "Resposta correta!"
+                        : "Resposta incorreta."}
+                    </Text>
+                  )}
+              </View>
+            );
+          })}
+
+          {/* REDAÇÃO */}
+          {redacao && (
+            <View style={styles.redacaoCard}>
+              <Text style={styles.provaInfoText}>
+                {redacao?.provaInfo?.data?.dados?.nome}
+              </Text>
+
+              <View style={styles.badgeReferencias}>
+                <Text style={styles.badgeReferenciasText}>
+                  Textos de Referência
+                </Text>
+              </View>
+
+              {redacao?.referencias?.map((referencia: any, index: number) => (
+                <View key={index} style={styles.redacaoReferenciaBox}>
+                  <Text style={styles.redacaoReferenciaTitle}>
+                    {referencia.titulo}
+                  </Text>
+                  <Text style={styles.redacaoReferenciaLegend}>
+                    {referencia.legenda}
+                  </Text>
+                  {referencia.url_imagem ? (
+                    <Image
+                      style={styles.redacaoReferenciaImage}
+                      source={{ uri: referencia.url_imagem }}
+                      resizeMode="contain"
+                    />
+                  ) : null}
+                  <Text style={styles.redacaoReferenciaText}>
+                    {referencia.texto}
+                  </Text>
+                </View>
+              ))}
+
+              <View style={styles.badgeTema}>
+                <Text style={styles.badgeTemaText}>Tema da Redação</Text>
+              </View>
+
+              <View style={styles.temaBox}>
+                <Text style={styles.temaIntro}>
+                  A partir da coletânea apresentada, elabore um texto narrativo
+                  ou um texto dissertativo-argumentativo explorando o seguinte
+                  tema:
+                </Text>
+                <Text style={styles.temaTitle}>
+                  {redacao?.redacaoInfo?.data?.dados?.instrucoes}
+                </Text>
+              </View>
+
+              <View style={styles.orientacoesBox}>
+                <Text style={styles.orientacoesTitle}>Orientações</Text>
+                <Text style={styles.orientacoesText}>
+                  • Narração – explore adequadamente os elementos desse gênero:
+                  fato(s), personagem(ns), tempo e lugar.
+                </Text>
+                <Text style={styles.orientacoesText}>
+                  • Dissertação – selecione, organize e relacione os
+                  argumentos, fatos e opiniões para sustentar suas ideias e
+                  pontos de vista.
+                </Text>
+                <Text style={styles.orientacoesSubtitle}>
+                  Ao elaborar seu texto:
+                </Text>
+                <Text style={styles.orientacoesText}>
+                  • Atribua um título para sua redação;
+                </Text>
+                <Text style={styles.orientacoesText}>
+                  • Não o redija em versos;
+                </Text>
+                <Text style={styles.orientacoesText}>
+                  • Organize-o em parágrafos;
+                </Text>
+                <Text style={styles.orientacoesText}>
+                  • Empregue apenas a norma culta da língua portuguesa;
+                </Text>
+                <Text style={styles.orientacoesText}>
+                  • Não copie os textos apresentados na coletânea e na prova;
+                </Text>
+              </View>
+
+              <TextInput
+                style={styles.redacaoInput}
+                placeholder="Escreva sua redação aqui..."
+                placeholderTextColor="#999"
+                multiline
+                numberOfLines={15}
+                textAlignVertical="top"
+                value={essayText}
+                onChangeText={setEssayText}
+              />
+
+              <TouchableOpacity
+                style={[
+                  styles.submitButton,
+                  !todasRespondidas && styles.submitButtonDisabled,
+                ]}
+                onPress={handleResponderTodas}
+                disabled={!todasRespondidas}
+              >
+                <Text style={styles.submitButtonText}>Encerrar Simulado</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-const BLUE = "#4A82F8";
-const ORANGE = "#FFA747";
-const GREY_BG = "#dddddd";
 
 const styles = StyleSheet.create({
   safe: {
-    display: "flex",
     flex: 1,
     backgroundColor: GREY_BG,
   },
   flex: {
-    display: "flex",
-    height: "100%",
+    flex: 1,
   },
   scroll: {
-    display: "flex",
     padding: 20,
-    width: "100%",
-    height: "100%",
-  },
-  header: {
-    backgroundColor: "#ffffff",
-    borderRadius: 6,
-    padding: 10,
-    boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.08)",
-    elevation: 4,
-    maxWidth: 500,
-  },
-  title: {
-    fontSize: 34,
-    fontWeight: "700",
-    color: BLUE,
-    textAlign: "center",
-    marginBottom: 20,
-    lineHeight: 40,
-  },
-  headerQuestoes: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 12,
-  },
-  headerQuestao: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    width: 32,
-    height: 32,
-    borderRadius: "100%",
-    backgroundColor: ORANGE,
-  },
-  questao: {},
-  content: {
-    paddingHorizontal: 20,
     paddingBottom: 40,
   },
-  questionCard: {
-    marginTop: 28,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 42,
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    boxShadow: "0px 6px 8px rgba(0, 0, 0, 0.25)",
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#555",
+  },
+  backButton: {
+    backgroundColor: "#90EE90",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+    marginBottom: 20,
+  },
+  backButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+  },
+  questaoCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
     elevation: 6,
   },
-  question: {
-    fontSize: 34,
-    fontWeight: "900",
-    color: "#222",
-    lineHeight: 40,
-    letterSpacing: 0.5,
-    textShadowColor: "rgba(0,0,0,0.35)",
-    textShadowOffset: { width: 0, height: 3 },
-    textShadowRadius: 4,
+  questaoCardRespondida: {
+    backgroundColor: "#d3d3d3",
   },
-  optionsBlock: {
-    marginTop: 48,
-    gap: 22,
+  provaBadge: {
+    backgroundColor: "#e5e5e5",
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    alignSelf: "flex-start",
+    marginBottom: 12,
   },
-  optionRow: {
+  provaBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#555",
+  },
+  referenciaBox: {
+    backgroundColor: "#e5e5e5",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    elevation: 2,
+  },
+  referenciaTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#000",
+    marginBottom: 4,
+  },
+  referenciaLegend: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: BLUE,
+    marginBottom: 8,
+  },
+  referenciaText: {
+    fontSize: 14,
+    color: "#333",
+    marginBottom: 8,
+  },
+  referenciaImage: {
+    width: "100%",
+    height: 200,
+    marginVertical: 8,
+  },
+  questaoText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 12,
+  },
+  questaoTextRespondida: {
+    color: "#666",
+  },
+  alternativasContainer: {
+    gap: 8,
+  },
+  alternativaRow: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
-    borderRadius: 44,
-    paddingVertical: 20,
-    paddingHorizontal: 22,
-    boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.25)",
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 12,
   },
-  optionRowSelected: {
-    boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.35)",
-    elevation: 6,
+  alternativaRowSelected: {
+    borderColor: BLUE,
+    backgroundColor: "#e3f2fd",
   },
-  bullet: {
-    width: 72,
-    height: 28,
-    borderRadius: 20,
-    borderWidth: 6,
-    borderColor: ORANGE,
+  alternativaRowDisabled: {
+    opacity: 0.6,
+  },
+  radioButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#ccc",
+    marginRight: 12,
+  },
+  radioButtonSelected: {
+    borderColor: BLUE,
+    backgroundColor: BLUE,
+  },
+  alternativaText: {
+    fontSize: 14,
+    color: "#333",
+    flex: 1,
+  },
+  alternativaNome: {
+    fontWeight: "700",
+  },
+  resultadoText: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  resultadoCorreto: {
+    color: "#4caf50",
+  },
+  resultadoIncorreto: {
+    color: "#f44336",
+  },
+  redacaoCard: {
     backgroundColor: "#fff",
-    marginRight: 24,
-  },
-  bulletSelected: {
-    backgroundColor: ORANGE,
-  },
-  optionText: {
-    fontSize: 34,
-    fontWeight: "800",
-    color: "#222",
-    flexShrink: 1,
-    textShadowColor: "rgba(0,0,0,0.3)",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 3,
-  },
-  confirmBtn: {
-    marginTop: 40,
-    backgroundColor: ORANGE,
-    borderRadius: 44,
-    paddingVertical: 26,
-    alignItems: "center",
-    justifyContent: "center",
-    boxShadow: "0px 6px 8px rgba(0, 0, 0, 0.3)",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
     elevation: 6,
   },
-  confirmText: {
-    fontSize: 38,
-    fontWeight: "800",
+  provaInfoText: {
+    fontSize: 12,
+    color: "#777",
+    marginBottom: 12,
+  },
+  badgeReferencias: {
+    backgroundColor: "#e5e5e5",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    alignSelf: "flex-start",
+    marginBottom: 16,
+  },
+  badgeReferenciasText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#555",
+  },
+  redacaoReferenciaBox: {
+    backgroundColor: "#e5e5e5",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    elevation: 2,
+  },
+  redacaoReferenciaTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 4,
+  },
+  redacaoReferenciaLegend: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 8,
+  },
+  redacaoReferenciaImage: {
+    width: "100%",
+    height: 200,
+    marginVertical: 8,
+  },
+  redacaoReferenciaText: {
+    fontSize: 14,
+    color: "#333",
+  },
+  badgeTema: {
+    backgroundColor: "#e5e5e5",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    alignSelf: "flex-start",
+    marginBottom: 16,
+  },
+  badgeTemaText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#555",
+  },
+  temaBox: {
+    borderWidth: 2,
+    borderColor: "#ccc",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 2,
+  },
+  temaIntro: {
+    fontSize: 14,
+    color: "#333",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  temaTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#333",
+    textAlign: "center",
+  },
+  orientacoesBox: {
+    marginBottom: 16,
+  },
+  orientacoesTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#333",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  orientacoesText: {
+    fontSize: 13,
+    color: "#333",
+    marginBottom: 4,
+  },
+  orientacoesSubtitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#333",
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  redacaoInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 12,
+    minHeight: 200,
+    fontSize: 14,
+    color: "#333",
+    backgroundColor: "#fff",
+    marginBottom: 16,
+  },
+  submitButton: {
+    backgroundColor: BLUE,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: "center",
+    elevation: 3,
+  },
+  submitButtonDisabled: {
+    backgroundColor: "#999",
+  },
+  submitButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
     color: "#fff",
-    textShadowColor: "rgba(0,0,0,0.25)",
-    textShadowOffset: { width: 0, height: 3 },
-    textShadowRadius: 4,
   },
 });
