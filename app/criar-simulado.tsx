@@ -1,3 +1,4 @@
+import { Picker } from "@react-native-picker/picker";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -8,9 +9,8 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { authService } from "../services/auth.service";
@@ -21,7 +21,7 @@ interface ILoginForm {
   senha: string;
 }
 
-export default function LoginScreen() {
+export default function CriarSimuladoScreen() {
   const [loginForm, setLoginForm] = useState<ILoginForm>({
     email: "",
     senha: "",
@@ -33,22 +33,20 @@ export default function LoginScreen() {
   const handleLogin = (e: GestureResponderEvent) => {
     e.preventDefault();
 
-    usuarioService
-      .login(loginForm)
-      .then(async ({ data: { dados } }) => {
-        console.log("Passou");
-        
-        await authService.saveToken(dados);
+    usuarioService.login(loginForm).then(async ({ data: { dados } }) => {
+      console.log("Passou");
 
-        if (await authService.isAuthenticatedAdmin()) {
-          router.push("/admin");
-        } else if (await authService.isAuthenticated()) {
-          router.push("/aluno");
-        }
-      })
-      // .catch((e) => {
-      //   console.log(e);
-      // });
+      await authService.saveToken(dados);
+
+      if (await authService.isAuthenticatedAdmin()) {
+        router.push("/admin");
+      } else if (await authService.isAuthenticated()) {
+        router.push("/aluno");
+      }
+    });
+    // .catch((e) => {
+    //   console.log(e);
+    // });
     // .catch(errorSwal);
   };
 
@@ -64,6 +62,8 @@ export default function LoginScreen() {
     router.push("/cadastro");
   };
 
+  const [selectedValue, setSelectedValue] = useState("");
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
@@ -77,30 +77,16 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.card}>
-            <Text style={styles.title}>Entrar na Plataforma</Text>
+            <Text style={styles.title}>Criar Simulado</Text>
 
-            <View style={styles.fieldBlock}>
-              <TextInput
-                style={styles.input}
-                placeholder="E-mail"
-                placeholderTextColor="#1d4fa8"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={loginForm.email}
-                onChangeText={(email) => setLoginForm({ ...loginForm, email })}
-              />
-            </View>
-
-            <View style={styles.fieldBlock}>
-              <TextInput
-                style={styles.input}
-                placeholder="Senha"
-                placeholderTextColor="#1d4fa8"
-                secureTextEntry
-                value={loginForm.senha}
-                onChangeText={(senha) => setLoginForm({ ...loginForm, senha })}
-              />
-            </View>
+            <Picker
+              selectedValue={selectedValue}
+              onValueChange={(itemValue) => setSelectedValue(itemValue)}
+            >
+              <Picker.Item label="Select..." value="" />
+              <Picker.Item label="JavaScript" value="js" />
+              <Picker.Item label="TypeScript" value="ts" />
+            </Picker>
 
             <TouchableOpacity
               style={styles.button}

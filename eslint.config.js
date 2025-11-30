@@ -7,4 +7,9 @@ module.exports = defineConfig([
   {
     ignores: ["dist/*"],
   },
+  {
+    rules: {
+      "@typescript-eslint/array-type": "off",
+    },
+  },
 ]);

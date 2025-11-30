@@ -1,4 +1,5 @@
 import {
+  GestureResponderEvent,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -11,19 +12,60 @@ import {
 } from "react-native";
 
 import { useState } from "react";
+import { UsuarioService } from "../services/usuario.service";
+import { useRouter } from "expo-router";
+import { authService } from "../services/auth.service";
+import Swal from "sweetalert2";
+
+interface IRegisterForm {
+  email: string;
+  nome: string;
+  senha: string;
+  senhaConfirmacao?: string;
+}
 
 export default function CadastroScreen() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [registerForm, setRegisterForm] = useState<IRegisterForm>({
+    email: "",
+    nome: "",
+    senha: "",
+    senhaConfirmacao: "",
+  });
 
-  const handleSignUp = () => {
-    // empty
+  const router = useRouter();
+  const usuarioService = new UsuarioService();
+
+  const handleRegister = (e: GestureResponderEvent) => {
+    e.preventDefault();
+
+    if (registerForm.senha !== registerForm.senhaConfirmacao) {
+      Swal.fire({
+        icon: "warning",
+        title: "Senhas não coincidem",
+        text: "As senhas informadas não coincidem. Por favor, verifique e tente novamente.",
+      });
+      return;
+    }
+
+    usuarioService.create(registerForm).then(() => {
+      usuarioService
+        .login({ email: registerForm.email, senha: registerForm.senha })
+        .then(async ({ data: { dados } }) => {
+          localStorage.setItem("token", dados);
+
+          if (await authService.isAuthenticatedAdmin()) {
+            router.push("/admin");
+          } else if (await authService.isAuthenticated()) {
+            router.push("/aluno");
+          }
+        });
+      // .catch(errorSwal);
+    });
+    // .catch(errorSwal);
   };
 
   const handleNavigateLogin = () => {
-    // empty
+    router.push("/login");
   };
 
   return (
@@ -45,8 +87,10 @@ export default function CadastroScreen() {
                 style={styles.input}
                 placeholder="Nome"
                 placeholderTextColor="#111"
-                value={name}
-                onChangeText={setName}
+                value={registerForm.nome}
+                onChangeText={(nome) =>
+                  setRegisterForm({ ...registerForm, nome })
+                }
                 autoCapitalize="words"
                 returnKeyType="next"
               />
@@ -57,8 +101,10 @@ export default function CadastroScreen() {
                 style={styles.input}
                 placeholder="E-mail"
                 placeholderTextColor="#111"
-                value={email}
-                onChangeText={setEmail}
+                value={registerForm.email}
+                onChangeText={(email) =>
+                  setRegisterForm({ ...registerForm, email })
+                }
                 autoCapitalize="none"
                 keyboardType="email-address"
                 returnKeyType="next"
@@ -71,8 +117,10 @@ export default function CadastroScreen() {
                 style={styles.input}
                 placeholder="Senha"
                 placeholderTextColor="#111"
-                value={password}
-                onChangeText={setPassword}
+                value={registerForm.senha}
+                onChangeText={(senha) =>
+                  setRegisterForm({ ...registerForm, senha })
+                }
                 secureTextEntry
                 returnKeyType="next"
                 textContentType="password"
@@ -84,8 +132,10 @@ export default function CadastroScreen() {
                 style={styles.input}
                 placeholder="Confirmar Senha"
                 placeholderTextColor="#111"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
+                value={registerForm.senhaConfirmacao}
+                onChangeText={(senhaConfirmacao) =>
+                  setRegisterForm({ ...registerForm, senhaConfirmacao })
+                }
                 secureTextEntry
                 returnKeyType="done"
                 textContentType="password"
@@ -94,7 +144,7 @@ export default function CadastroScreen() {
 
             <TouchableOpacity
               style={styles.button}
-              onPress={handleSignUp}
+              onPress={handleRegister}
               accessibilityRole="button"
             >
               <Text style={styles.buttonText}>Cadastrar</Text>

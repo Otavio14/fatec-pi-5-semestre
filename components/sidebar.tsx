@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { authService } from "../services/auth.service";
 
@@ -38,22 +38,41 @@ export function Sidebar({
     <>
       <Animated.View style={[styles.sidebar, { transform: [{ translateX }] }]}>
         {isAuthenticatedAdmin ? (
-          <TouchableOpacity
-            onPress={() => {
-              setIsSidebarOpen(false);
-              router.push("/admin/usuarios");
-            }}
-          >
-            <Text>Usuários</Text>
-          </TouchableOpacity>
+          <Fragment>
+            <TouchableOpacity
+              onPress={() => {
+                setIsSidebarOpen(false);
+                router.push("/admin");
+              }}
+            >
+              <Text>Home</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setIsSidebarOpen(false);
+                router.push("/admin/usuarios");
+              }}
+            >
+              <Text>Usuários</Text>
+            </TouchableOpacity>
+          </Fragment>
         ) : isAuthenticated ? (
-          <TouchableOpacity
-            onPress={() => {
-              router.push("/");
-            }}
-          >
-            <Text>Teste</Text>
-          </TouchableOpacity>
+          <Fragment>
+            <TouchableOpacity
+              onPress={() => {
+                router.push("/aluno");
+              }}
+            >
+              <Text>Home</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                router.push("/aluno");
+              }}
+            >
+              <Text>Seus Simulados</Text>
+            </TouchableOpacity>
+          </Fragment>
         ) : null}
       </Animated.View>
     </>

@@ -16,6 +16,7 @@ export const apiService = axios.create({
 apiService.interceptors.request.use(
   async function (config) {
     const token = await authService.getToken();
+
     if (token) config.headers.Authorization = `Bearer ${token}`;
 
     return config;
@@ -25,16 +26,18 @@ apiService.interceptors.request.use(
   }
 );
 
-export const errorSwal = ({
-  response: {
-    data: { mensagem, icone, titulo },
-  },
-}: {
-  response: { data: IApiResponse };
-}) => {
-  Swal.fire({
-    icon: icone,
-    title: titulo,
-    text: mensagem,
-  });
+export const errorSwal = (value) => {
+  console.log(value?.message);
+
+  // const { mensagem, icone, titulo } = response?.data || {
+  //   mensagem: "Erro desconhecido",
+  //   icone: "error",
+  //   titulo: "Erro",
+  // };
+
+  // Swal.fire({
+  //   icon: icone,
+  //   title: titulo,
+  //   text: mensagem,
+  // });
 };

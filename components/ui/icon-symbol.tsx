@@ -23,6 +23,8 @@ const MAPPING = {
   "chevron.right": "chevron-right",
   "line.3.horizontal": "menu",
   "person.circle.fill": "person",
+  pencil: "edit",
+  trash: "delete",
 } as IconMapping;
 
 /**

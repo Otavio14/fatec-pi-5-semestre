@@ -6,18 +6,17 @@ const TOKEN_KEY = "auth_token";
 
 export const authService = {
   saveToken: async (token: string): Promise<void> => {
-    if (window?.location?.hostname?.includes("localhost"))
+    if (typeof localStorage !== "undefined")
       localStorage.setItem(TOKEN_KEY, token);
     else await SecureStore.setItemAsync(TOKEN_KEY, token);
   },
   getToken: async (): Promise<string | null> => {
-    if (window?.location?.hostname?.includes("localhost"))
+    if (typeof localStorage !== "undefined")
       return localStorage.getItem(TOKEN_KEY);
     else return await SecureStore.getItemAsync(TOKEN_KEY);
   },
   deleteToken: async (): Promise<void> => {
-    if (window?.location?.hostname?.includes("localhost"))
-      localStorage.removeItem(TOKEN_KEY);
+    if (typeof localStorage !== "undefined") localStorage.removeItem(TOKEN_KEY);
     else await SecureStore.deleteItemAsync(TOKEN_KEY);
   },
   // getUserInfo: (): any => {

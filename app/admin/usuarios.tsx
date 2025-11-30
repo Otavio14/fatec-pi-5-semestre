@@ -1,12 +1,21 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { errorSwal } from "../../services/api.service";
-import { IUsuario, IUsuarioForm } from "../../types/usuario.type";
-import { UsuarioService } from "../../services/usuario.service";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Cell, Row, Table, TableWrapper } from "react-native-table-component";
 import { Swal, Toast } from "../../components/swal.shared";
-import { useTheme } from "@react-navigation/native";
 import { ThemedText } from "../../components/themed-text";
 import { ThemedView } from "../../components/themed-view";
+import { IconSymbol } from "../../components/ui/icon-symbol";
+import { Colors } from "../../constants/theme";
+import { useColorScheme } from "../../hooks/use-color-scheme.web";
+import { errorSwal } from "../../services/api.service";
+import { UsuarioService } from "../../services/usuario.service";
+import { IUsuario, IUsuarioForm } from "../../types/usuario.type";
 
 export default function AdminUsuariosScreen() {
   const [usuarios, setUsuarios] = useState<Array<IUsuario>>([]);
@@ -21,7 +30,9 @@ export default function AdminUsuariosScreen() {
     senha: "",
     senhaConfirmacao: "",
   });
-  const theme = useTheme();
+  // const theme = useTheme();
+  const colorScheme = useColorScheme();
+  const iconColor = Colors[colorScheme ?? "light"].tint;
 
   const usuarioService = useMemo(() => new UsuarioService(), []);
   const DialogRef = useRef<HTMLDialogElement>(null);
@@ -151,66 +162,48 @@ export default function AdminUsuariosScreen() {
           Adicionar
         </TouchableOpacity>
       </View>
-      <View style={styles.table}>
-        <Text style={styles.tableCell}>Nome</Text>
-        <Text style={styles.tableCell}>E-mail</Text>
-        <Text style={styles.tableCell}>Perfil</Text>
-        <Text style={styles.tableCell}></Text>
-        <Text style={styles.tableCell}></Text>
+      <Table
+        style={styles.table}
+        borderStyle={{
+          borderWidth: 1,
+          borderColor: "#fff",
+          borderRadius: 16,
+        }}
+      >
+        <Row
+          data={["Nome", "E-mail", "Perfil", "", ""]}
+          textStyle={styles.tableCell}
+        />
         {usuarios.map((usuario, index) => (
-          <Fragment key={index}>
-            <Text style={styles.tableCell}>{usuario.nome}</Text>
-            <Text style={styles.tableCell}>{usuario.email}</Text>
-            <Text style={styles.tableCell}>{usuario.perfil}</Text>
-            <Text style={styles.tableCell}>
-              <TouchableOpacity onPress={() => openModal(usuario?.id)}>
-                {/* <PencilIcon size={20} /> */}
-                <Text>Edit</Text>
-              </TouchableOpacity>
-            </Text>
-            <Text style={styles.tableCell}>
-              <TouchableOpacity
-                onPress={() => {
-                  deletar(usuario?.id);
-                }}
-              >
-                {/* <TrashIcon size={20} /> */}
-                <Text>Delete</Text>
-              </TouchableOpacity>
-            </Text>
-          </Fragment>
+          <TableWrapper key={index} style={styles.tableRow}>
+            <Cell textStyle={styles.tableCell} data={usuario["nome"]} />
+            <Cell textStyle={styles.tableCell} data={usuario["email"]} />
+            <Cell textStyle={styles.tableCell} data={usuario["perfil"]} />
+            <Cell
+              textStyle={styles.tableCellIcon}
+              data={
+                <TouchableOpacity
+                  onPress={() => openModal(usuario.id)}
+                  key={index}
+                >
+                  <IconSymbol size={20} name="pencil" color={iconColor} />
+                </TouchableOpacity>
+              }
+            />
+            <Cell
+              textStyle={styles.tableCellIcon}
+              data={
+                <TouchableOpacity
+                  onPress={() => openModal(usuario.id)}
+                  key={index}
+                >
+                  <IconSymbol size={20} name="trash" color={iconColor} />
+                </TouchableOpacity>
+              }
+            />
+          </TableWrapper>
         ))}
-        {/* <table>
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>E-mail</th>
-              <th>Perfil</th>
-              <th></th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {usuarios.map((usuario, index) => (
-              <tr key={index}>
-                <td>{usuario.nome}</td>
-                <td>{usuario.email}</td>
-                <td>{usuario.perfil}</td>
-                <td>
-                  <button onClick={() => openModal(usuario?.id)}></button>
-                </td>
-                <td>
-                  <button
-                    onClick={() => {
-                      deletar(usuario?.id);
-                    }}
-                  ></button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table> */}
-      </View>
+      </Table>
     </ThemedView>
   );
 }
@@ -263,14 +256,16 @@ const styles = StyleSheet.create({
   },
   table: {
     backgroundColor: "#c3cfe2",
-    borderRadius: 8,
-    display: "flex",
-    flexDirection: "row",
-    flexWrap: "wrap",
   },
   tableCell: {
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: `${100 / 5}%`,
+    margin: 8,
+  },
+  tableCellIcon: {
+    margin: 8,
+    textAlign: "center",
+    width: 20,
+  },
+  tableRow: {
+    flexDirection: "row",
   },
 });
