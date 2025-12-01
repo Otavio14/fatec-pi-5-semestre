@@ -1,5 +1,7 @@
+import React, { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import React from "react";
+import { UsuarioService } from "../services/usuario.service";
+import { authService } from "../services/auth.service";
 import {
   Image,
   ScrollView,
@@ -11,11 +13,26 @@ import {
 } from "react-native";
 
 export default function UserCard() {
-  const router = useRouter()
-  const handleHome = () => {
-    router.push("/")
-  };
+  const router = useRouter();
+  const [nome, setNome] = useState("");
+  const usuarioService = new UsuarioService();
 
+  useEffect(() => {
+    async function fetchUser() {
+      const token = await authService.getToken();
+      if (token) {
+        const { id } = require("jose").decodeJwt(token);
+        usuarioService.findOne(id).then(res => {
+          if(res.data.valido) setNome(res.data.dados.nome);
+        });
+      }
+    }
+    fetchUser();
+  }, []);
+
+  const handleHome = () => {
+    router.push("/");
+  };
   return (
     <View style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor="#dedede" />
@@ -26,7 +43,7 @@ export default function UserCard() {
             style={styles.avatarImg}
             resizeMode="contain"
           />
-          <Text style={styles.userName}>Ricardo Moraes</Text>
+          <Text style={styles.userName}>{nome ? nome : "Carregando..."}</Text>
           {/* falta escrever a lógica de extraçao do nome do usuário */}
         </View>
         <TouchableOpacity style={styles.cta} onPress={handleHome}>
