@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Dimensions,
@@ -15,6 +16,7 @@ const GREY_BG = "#e4e4e4";
 const DARK_GREY = "#8f8b8b";
 
 export default function RedacaoScreen() {
+  const router = useRouter()
   const [photo, setPhoto] = useState<string | null>(null);
 
   const handleCapture = () => {
@@ -22,7 +24,10 @@ export default function RedacaoScreen() {
   };
 
   const handleSubmit = () => {
-    // empty
+    // lógica inicial
+
+    //no fim termina na nota de parabenização
+    router.push("/redacao-recebida")
   };
 
   return (

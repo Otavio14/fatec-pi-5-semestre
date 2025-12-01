@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import React from "react";
 import {
   Image,
@@ -10,8 +11,9 @@ import {
 } from "react-native";
 
 export default function UserCard() {
-  const handleBack = () => {
-    // Home
+  const router = useRouter()
+  const handleHome = () => {
+    router.push("/")
   };
 
   return (
@@ -27,7 +29,7 @@ export default function UserCard() {
           <Text style={styles.userName}>Ricardo Moraes</Text>
           {/* falta escrever a lógica de extraçao do nome do usuário */}
         </View>
-        <TouchableOpacity style={styles.cta} onPress={handleBack}>
+        <TouchableOpacity style={styles.cta} onPress={handleHome}>
           <Text style={styles.ctaText}>Home</Text>
         </TouchableOpacity>
       </ScrollView>

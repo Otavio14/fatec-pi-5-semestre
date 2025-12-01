@@ -9,17 +9,20 @@ import {
   View,
 } from "react-native";
 
+import { useRouter } from "expo-router";
+
 export default function HomeSimulado() {
+  const router = useRouter()
   const handleNovaQuestao = () => {
-    // nova questao
+    router.push("/criar-questao")
   };
 
   const handleNovoSimulado = () => {
-    // novo simulado
+    router.push("/criar-simulado")
   };
 
   const handleHome = () => {
-    // home
+    router.push("/")
   };
 
   return (

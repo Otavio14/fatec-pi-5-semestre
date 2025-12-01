@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import {
   Image,
   ScrollView,
@@ -9,8 +10,9 @@ import {
 } from "react-native";
 
 export default function SimuladoCriadoScreen() {
-  const handleCreate = () => {
-    // empty
+  const router = useRouter()
+  const handleHome = () => {
+    router.push("/")
   };
 
   return (
@@ -21,7 +23,6 @@ export default function SimuladoCriadoScreen() {
         <Text style={styles.title}>SEU SIMULADO FOI CRIADO!</Text>
 
         <View style={styles.illustrationWrap}>
-          {/* Replace the image path if needed */}
           <Image
             source={require("@/assets/images/houve-sucesso.png")}
             style={styles.illustration}
@@ -31,7 +32,7 @@ export default function SimuladoCriadoScreen() {
 
         <TouchableOpacity
           style={styles.cta}
-          onPress={handleCreate}
+          onPress={handleHome}
           accessibilityRole="button"
         >
           <Text style={styles.ctaText}>Home</Text>
