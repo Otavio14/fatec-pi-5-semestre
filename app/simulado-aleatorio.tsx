@@ -77,8 +77,9 @@ export default function SimuladoAleatorioScreen() {
           style={styles.cta}
           onPress={handleCreate}
           accessibilityRole="button"
+          disabled={criando}
         >
-          <Text style={styles.ctaText}>Criar</Text>
+          <Text style={styles.ctaText}>{criando ? "Criando..." : "Criar"}</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
