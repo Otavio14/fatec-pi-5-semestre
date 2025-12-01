@@ -7,25 +7,53 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import * as ImagePicker from 'expo-image-picker';
+import scanOCR from 'expo-mlkit-ocr';
 
 const ORANGE = "#FFA747";
 const GREY_BG = "#e4e4e4";
 const DARK_GREY = "#8f8b8b";
 
-export default function RedacaoScreen() {
+export default function RedacaoOcrScreen() {
   const router = useRouter();
   const [photo, setPhoto] = useState<string | null>(null);
+  const [texto, setTexto] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleCapture = () => {
-    // empty
+  const handleCapture = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Permissão de câmera necessária.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setPhoto(result.assets[0].uri);
+      setLoading(true);
+      try {
+        const ocr = await scanOCR(result.assets[0].uri, 'lat');
+        setTexto(ocr?.blocks?.map((b: { text: string }) => b.text).join('\n') || "");
+      } catch {
+        setTexto("");
+        alert("Erro ao extrair texto da imagem!");
+      }
+      setLoading(false);
+    }
   };
 
   const handleSubmit = () => {
-    // lógica inicial
-    //no fim termina na nota de parabenização
+    if (!texto.trim()) {
+      alert("Nenhum texto extraído!");
+      return;
+    }
+    // Aqui vai a lógica de criação da redação (integração futura com backend)
     router.push("/redacao-recebida");
   };
 
@@ -39,9 +67,7 @@ export default function RedacaoScreen() {
             {photo ? (
               <Image source={{ uri: photo }} style={styles.photo} />
             ) : (
-              <Text style={styles.placeholderText}>
-                Sua imagem aparecerá aqui
-              </Text>
+              <Text style={styles.placeholderText}>Sua imagem aparecerá aqui</Text>
             )}
           </View>
         </View>
@@ -60,13 +86,26 @@ export default function RedacaoScreen() {
             </View>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.submitBtn}
+            style={[styles.submitBtn, !texto.trim() && {backgroundColor:'#bbb'}]}
             onPress={handleSubmit}
             accessibilityRole="button"
             accessibilityLabel="Enviar redação"
+            disabled={!texto.trim()}
           >
             <Text style={styles.submitText}>Enviar</Text>
           </TouchableOpacity>
+        </View>
+        {loading && <Text style={{color:ORANGE,marginTop:10,textAlign:'center'}}>Extraindo texto da imagem...</Text>}
+        <Text style={{marginTop:16,fontWeight:'bold',marginBottom:8}}>Texto extraído:</Text>
+        <View style={{width:'94%',backgroundColor:'#fff',borderRadius:14,minHeight:100,borderWidth:2,borderColor:ORANGE,padding:10,marginBottom:24}}>
+          <TextInput
+            value={texto}
+            onChangeText={setTexto}
+            style={{minHeight:90,fontSize:16}}
+            placeholder="Texto extraído da redação aparecerá aqui"
+            editable={!loading}
+            multiline
+          />
         </View>
       </ScrollView>
     </View>
