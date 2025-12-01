@@ -17,6 +17,10 @@ export default function HomeSimulado() {
     router.push("/criar-questao")
   };
 
+  const handleNovoTemaRedacao = () => {
+    router.push("/criar-redacao")
+  };
+
   const handleNovoSimulado = () => {
     router.push("/criar-simulado")
   };
@@ -31,6 +35,10 @@ export default function HomeSimulado() {
       <ScrollView contentContainerStyle={styles.content}>
         <TouchableOpacity style={styles.botao} onPress={handleNovaQuestao}>
           <Text style={styles.botaoTexto}>Criar nova Questão</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.botao} onPress={handleNovoTemaRedacao}>
+          <Text style={styles.botaoTexto}>Criar novo Tema de Redação</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.botao} onPress={handleNovoSimulado}>
