@@ -7,10 +7,55 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { SimuladoService } from "../services/simulado.service";
+import { authService } from "../services/auth.service";
 
 export default function SimuladoAleatorioScreen() {
-  const handleCreate = () => {
-    // empty
+  const router = useRouter();
+  const [criando, setCriando] = useState(false);
+
+  const handleCreate = async () => {
+    setCriando(true);
+    try {
+      // Exemplo: Obtendo dados básicos para criar o simulado
+      // Ideal: pegar dinamicamente do contexto do usuário/autenticação
+      const simuladoService = new SimuladoService();
+      const dataAtual = new Date().toISOString().split("T")[0];
+      let id_usuario = 1; // Trocar para pegar do token do usuário logado
+      let id_curso = 1;   // Trocar para pegar do contexto real
+
+      // Se quiser, pode tentar decodificar o token JWT para buscar id_usuario
+      /*
+      const token = await authService.getToken();
+      if (token) {
+        const jwtDecoded = JSON.parse(atob(token.split('.')?.[1] || '{}'));
+        id_usuario = jwtDecoded.id || 1;
+      }
+      */
+
+      const novoSimulado = {
+        data: dataAtual,
+        id_curso,
+        id_usuario,
+        nome: "Simulado Aleatório",
+        nota: 0
+      };
+
+      const resp = await simuladoService.create(novoSimulado);
+      if (resp.data.valido) {
+        alert("Simulado criado com sucesso! ID: " + resp.data.dados);
+        // Redireciona após criar (opcional):
+        // router.push(`/simulado-criado?id=${resp.data.dados}`);
+      } else {
+        alert("Erro ao criar simulado: " + resp.data.mensagem);
+      }
+    } catch (e) {
+      alert("Erro ao criar simulado!");
+    } finally {
+      setCriando(false);
+    }
   };
 
   return (
