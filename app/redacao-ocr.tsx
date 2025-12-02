@@ -109,15 +109,16 @@ export default function RedacaoOcrScreen() {
         )}
         {texto && (
           <>
-            <Text style={styles.labelText}>Texto extraído:</Text>
+            <Text style={styles.labelText}>Texto extraído (você pode editar):</Text>
             <View style={styles.textContainer}>
               <TextInput
                 value={texto}
-                onChangeText={() => {}} // Não permite edição
+                onChangeText={setTexto}
                 style={styles.textInput}
-                placeholder="Texto extraído aparecerá aqui"
-                editable={false}
+                placeholder="Texto extraído aparecerá aqui. Você pode editar para corrigir erros."
+                editable={true}
                 multiline
+                textAlignVertical="top"
               />
             </View>
           </>
