@@ -1,11 +1,13 @@
 import axios from "axios";
+import { Platform } from "react-native";
 import { authService } from "./auth.service";
 
 export const apiService = axios.create({
   // baseURL: window.location.hostname.includes("localhost")
-  baseURL: true
-    ? "http://localhost:3000"
-    : "https://fatec-pi-4-semestre-latest.onrender.com",
+  baseURL:
+    Platform.OS === "web"
+      ? "http://localhost:3000"
+      : "https://fatec-pi-4-semestre-latest.onrender.com",
   headers: {
     "Content-Type": "application/json",
   },
@@ -24,7 +26,7 @@ apiService.interceptors.request.use(
   }
 );
 
-export const errorSwal = (value: any) => {
+export const errorSwal = (value: { message: string }) => {
   console.log(value?.message);
 
   // const { mensagem, icone, titulo } = response?.data || {

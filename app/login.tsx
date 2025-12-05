@@ -13,7 +13,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useThemeColor } from "../hooks/use-theme-color";
 import { authService } from "../services/auth.service";
 import { UsuarioService } from "../services/usuario.service";
 
@@ -30,32 +29,35 @@ export default function LoginScreen() {
 
   const router = useRouter();
   const usuarioService = new UsuarioService();
-  const backgroundColor = useThemeColor({}, "background");
 
-  const handleLogin = (e: GestureResponderEvent) => {
+  const handleLogin = async (e: GestureResponderEvent) => {
     e.preventDefault();
-
-    usuarioService.login(loginForm).then(async ({ data: { dados } }) => {
+    try {
+      const {
+        data: { dados },
+      } = await usuarioService.login(loginForm);
       await authService.saveToken(dados);
-
       if (await authService.isAuthenticatedAdmin()) {
         router.push("/admin");
       } else if (await authService.isAuthenticated()) {
         router.push("/aluno");
       }
-    });
-    // .catch((e) => {
-    //   console.log(e);
-    // });
-    // .catch(errorSwal);
+      console.log(dados);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   useEffect(() => {
     async function fetchData() {
-      if (await authService.isAuthenticatedAdmin()) {
-        router.push("/admin");
-      } else if (await authService.isAuthenticated()) {
-        router.push("/aluno");
+      try {
+        if (await authService.isAuthenticatedAdmin()) {
+          router.push("/admin");
+        } else if (await authService.isAuthenticated()) {
+          router.push("/aluno");
+        }
+      } catch (error) {
+        console.log(error);
       }
     }
     fetchData();
@@ -74,7 +76,7 @@ export default function LoginScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
-          contentContainerStyle={{ ...styles.scroll, backgroundColor }}
+          contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.card}>

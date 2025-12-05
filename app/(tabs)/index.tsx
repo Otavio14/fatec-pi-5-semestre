@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
 import {
+  Dimensions,
   Image,
   ScrollView,
   StatusBar,
@@ -269,7 +270,7 @@ const styles = StyleSheet.create({
     left: 0,
     position: "absolute",
     top: 0,
-    width: "100%",
+    width: Dimensions.get("window").width,
     zIndex: -1,
     // clipPath: "inset(0px -10px 0px 0px)",
     shadowColor: "#000",
