@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -9,9 +9,8 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { apiService } from "../services/api.service";
@@ -38,6 +37,7 @@ interface IRedacaoCompleta {
 }
 
 export default function SimuladoScreen() {
+  const params = useLocalSearchParams();
   const [questoesComReferencias, setQuestoesComReferencias] = useState<
     IQuestaoComReferencia[]
   >([]);
@@ -51,8 +51,25 @@ export default function SimuladoScreen() {
   const [redacaoSorteada, setRedacaoSorteada] =
     useState<IRedacaoCompleta | null>(null);
   const [loading, setLoading] = useState(true);
+  const [redacaoEnviada, setRedacaoEnviada] = useState(false);
+  const [simuladoFinalizado, setSimuladoFinalizado] = useState(false);
 
   const router = useRouter();
+
+  // Recuperar estado das respostas quando voltar da redação
+  useEffect(() => {
+    if (params.respostas) {
+      try {
+        const respostasRecuperadas = JSON.parse(params.respostas as string);
+        setRespostasSelecionadas(respostasRecuperadas);
+      } catch (e) {
+        console.error("Erro ao recuperar respostas:", e);
+      }
+    }
+    if (params.redacaoEnviada === 'true') {
+      setRedacaoEnviada(true);
+    }
+  }, [params]);
 
   function embaralhar<T>(array: T[]): T[] {
     return array
@@ -176,6 +193,23 @@ export default function SimuladoScreen() {
     setResultado(novoResultado);
   };
 
+  const handleFinalizarSimulado = () => {
+    // Revelar respostas corretas
+    const novoResultado: { [questaoId: number]: boolean } = {};
+
+    questoesComReferencias.forEach((questao) => {
+      const alternativaSelecionadaId = respostasSelecionadas[questao.id];
+      const alternativa = questao.alternativas.find(
+        (alt: any) => alt.id === alternativaSelecionadaId,
+      );
+      const correta = alternativa?.correta || false;
+      novoResultado[questao.id] = correta;
+    });
+
+    setResultado(novoResultado);
+    setSimuladoFinalizado(true);
+  };
+
   if (loading || questoesComReferencias.length === 0) {
     return (
       <SafeAreaView style={styles.safe}>
@@ -191,6 +225,7 @@ export default function SimuladoScreen() {
   const todasRespondidas =
     Object.keys(respostasSelecionadas).length ===
     questoesComReferencias.length;
+  const podeFinalizarSimulado = todasRespondidas && redacaoEnviada;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -266,6 +301,8 @@ export default function SimuladoScreen() {
                           respostasSelecionadas[questao.id] ===
                             alternativa.id && styles.alternativaRowSelected,
                           respondida && styles.alternativaRowDisabled,
+                          simuladoFinalizado && alternativa.correta && styles.alternativaCorreta,
+                          simuladoFinalizado && !alternativa.correta && respostasSelecionadas[questao.id] === alternativa.id && styles.alternativaIncorreta,
                         ]}
                         onPress={() =>
                           !respondida &&
@@ -278,6 +315,7 @@ export default function SimuladoScreen() {
                             styles.radioButton,
                             respostasSelecionadas[questao.id] ===
                               alternativa.id && styles.radioButtonSelected,
+                            simuladoFinalizado && alternativa.correta && styles.radioButtonCorreto,
                           ]}
                         />
                         <Text style={styles.alternativaText}>
@@ -285,6 +323,9 @@ export default function SimuladoScreen() {
                             ({alternativa.nome})
                           </Text>{" "}
                           {alternativa.texto}
+                          {simuladoFinalizado && alternativa.correta && (
+                            <Text style={styles.corretaIndicador}> ✓ Correta</Text>
+                          )}
                         </Text>
                       </TouchableOpacity>
                     ) : null,
@@ -390,27 +431,49 @@ export default function SimuladoScreen() {
                 </Text>
               </View>
 
-              <TextInput
-                style={styles.redacaoInput}
-                placeholder="Escreva sua redação aqui..."
-                placeholderTextColor="#999"
-                multiline
-                numberOfLines={15}
-                textAlignVertical="top"
-                value={essayText}
-                onChangeText={setEssayText}
-              />
+              <TouchableOpacity
+                style={[
+                  styles.enviarRedacaoButton,
+                  redacaoEnviada && styles.enviarRedacaoButtonEnviado,
+                ]}
+                onPress={() => {
+                  const respostasString = JSON.stringify(respostasSelecionadas);
+                  router.push({
+                    pathname: "/redacao",
+                    params: { 
+                      fromSimulado: 'true',
+                      respostas: respostasString 
+                    }
+                  });
+                }}
+              >
+                <Text style={styles.enviarRedacaoButtonText}>
+                  {redacaoEnviada ? "✓ Redação Enviada" : "📝 Enviar Redação"}
+                </Text>
+              </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
-                  styles.submitButton,
-                  !todasRespondidas && styles.submitButtonDisabled,
+                  styles.finalizarButton,
+                  (!podeFinalizarSimulado || simuladoFinalizado) && styles.finalizarButtonDisabled,
                 ]}
-                onPress={handleResponderTodas}
-                disabled={!todasRespondidas}
+                onPress={handleFinalizarSimulado}
+                disabled={!podeFinalizarSimulado || simuladoFinalizado}
               >
-                <Text style={styles.submitButtonText}>Encerrar Simulado</Text>
+                <Text style={styles.finalizarButtonText}>
+                  {simuladoFinalizado ? "✓ Simulado Finalizado" : "🏁 Finalizar Simulado"}
+                </Text>
               </TouchableOpacity>
+
+              {!podeFinalizarSimulado && (
+                <Text style={styles.avisoText}>
+                  {!todasRespondidas && !redacaoEnviada
+                    ? "⚠️ Responda todas as questões e envie a redação para finalizar"
+                    : !todasRespondidas
+                    ? "⚠️ Responda todas as questões para finalizar"
+                    : "⚠️ Envie a redação para finalizar"}
+                </Text>
+              )}
             </View>
           )}
         </ScrollView>
@@ -535,6 +598,16 @@ const styles = StyleSheet.create({
   alternativaRowDisabled: {
     opacity: 0.6,
   },
+  alternativaCorreta: {
+    backgroundColor: "#d4edda",
+    borderColor: "#28a745",
+    borderWidth: 2,
+  },
+  alternativaIncorreta: {
+    backgroundColor: "#f8d7da",
+    borderColor: "#dc3545",
+    borderWidth: 2,
+  },
   radioButton: {
     width: 20,
     height: 20,
@@ -546,6 +619,14 @@ const styles = StyleSheet.create({
   radioButtonSelected: {
     borderColor: BLUE,
     backgroundColor: BLUE,
+  },
+  radioButtonCorreto: {
+    borderColor: "#28a745",
+    backgroundColor: "#28a745",
+  },
+  corretaIndicador: {
+    color: "#28a745",
+    fontWeight: "700",
   },
   alternativaText: {
     fontSize: 14,
@@ -674,16 +755,22 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 8,
   },
-  redacaoInput: {
-    borderWidth: 1,
-    borderColor: "#ccc",
+  enviarRedacaoButton: {
+    backgroundColor: ORANGE,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     borderRadius: 8,
-    padding: 12,
-    minHeight: 200,
-    fontSize: 14,
-    color: "#333",
-    backgroundColor: "#fff",
+    alignItems: "center",
+    elevation: 3,
     marginBottom: 16,
+  },
+  enviarRedacaoButtonEnviado: {
+    backgroundColor: "#4caf50",
+  },
+  enviarRedacaoButtonText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#fff",
   },
   submitButton: {
     backgroundColor: BLUE,
@@ -700,5 +787,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: "#fff",
+  },
+  finalizarButton: {
+    backgroundColor: "#28a745",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: "center",
+    elevation: 3,
+  },
+  finalizarButtonDisabled: {
+    backgroundColor: "#999",
+    opacity: 0.6,
+  },
+  finalizarButtonText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  avisoText: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#dc3545",
+    textAlign: "center",
   },
 });

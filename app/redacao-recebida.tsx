@@ -1,4 +1,5 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect } from "react";
 import {
   Image,
   ScrollView,
@@ -10,9 +11,39 @@ import {
 } from "react-native";
 
 export default function RedacaoRecebidaScreen() {
-  const router = useRouter()
-  const handleHome = () => {
-    router.push("/")
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  
+  // Redirecionar automaticamente após 3 segundos se veio do simulado
+  useEffect(() => {
+    if (params.fromSimulado === 'true' && params.respostas) {
+      const timer = setTimeout(() => {
+        router.push({
+          pathname: "/simulado",
+          params: {
+            respostas: params.respostas as string,
+            redacaoEnviada: 'true'
+          }
+        });
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    } else if (params.fromRealizarRedacao === 'true') {
+      const timer = setTimeout(() => {
+        router.push({
+          pathname: "/realizar_redacao",
+          params: {
+            redacaoEnviada: 'true'
+          }
+        });
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [params, router]);
+  
+  const handleContinue = () => {
+    router.push("/");
   };
 
   return (
@@ -30,13 +61,15 @@ export default function RedacaoRecebidaScreen() {
           />
         </View>
 
-        <TouchableOpacity
-          style={styles.cta}
-          onPress={handleHome}
-          accessibilityRole="button"
-        >
-          <Text style={styles.ctaText}>Home</Text>
-        </TouchableOpacity>
+        {params.fromSimulado !== 'true' && params.fromRealizarRedacao !== 'true' && (
+          <TouchableOpacity
+            style={styles.cta}
+            onPress={handleContinue}
+            accessibilityRole="button"
+          >
+            <Text style={styles.ctaText}>Home</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </View>
   );

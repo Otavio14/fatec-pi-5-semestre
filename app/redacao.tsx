@@ -1,4 +1,5 @@
-import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Dimensions,
@@ -7,9 +8,11 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import Tesseract from "tesseract.js";
 
 const ORANGE = "#FFA747";
 const GREY_BG = "#e4e4e4";
@@ -17,16 +20,70 @@ const DARK_GREY = "#8f8b8b";
 
 export default function RedacaoScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const [photo, setPhoto] = useState<string | null>(null);
+  const [texto, setTexto] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleCapture = () => {
-    // empty
+  const handleCapture = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      alert("Permissão de câmera necessária.");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ["images"],
+      quality: 1,
+      allowsEditing: true,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setPhoto(result.assets[0].uri);
+      setLoading(true);
+      try {
+        const {
+          data: { text },
+        } = await Tesseract.recognize(result.assets[0].uri, "por", {
+          logger: (m) => console.log(m),
+        });
+        setTexto(text || "");
+      } catch (error) {
+        console.error("Erro ao extrair texto:", error);
+        setTexto("");
+        alert("Erro ao extrair texto da imagem!");
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   const handleSubmit = () => {
-    // lógica inicial
-    //no fim termina na nota de parabenização
-    router.push("/redacao-recebida");
+    if (!texto.trim()) {
+      alert("Nenhum texto extraído! Tire uma foto primeiro.");
+      return;
+    }
+    // (lógica de criação da redação (integração com backend))
+    
+    // Se veio do simulado, passar parâmetros para redacao-recebida
+    if (params.fromSimulado === 'true' && params.respostas) {
+      router.push({
+        pathname: "/redacao-recebida",
+        params: {
+          fromSimulado: 'true',
+          respostas: params.respostas as string
+        }
+      });
+    } else if (params.fromRealizarRedacao === 'true') {
+      // Se veio de realizar_redacao, voltar para lá marcando como enviada
+      router.push({
+        pathname: "/redacao-recebida",
+        params: {
+          fromRealizarRedacao: 'true'
+        }
+      });
+    } else {
+      router.push("/redacao-recebida");
+    }
   };
 
   return (
@@ -60,14 +117,39 @@ export default function RedacaoScreen() {
             </View>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.submitBtn}
+            style={[
+              styles.submitBtn,
+              !texto.trim() && styles.submitBtnDisabled,
+            ]}
             onPress={handleSubmit}
             accessibilityRole="button"
             accessibilityLabel="Enviar redação"
+            disabled={!texto.trim()}
           >
             <Text style={styles.submitText}>Enviar</Text>
           </TouchableOpacity>
         </View>
+        {loading && (
+          <Text style={styles.loadingText}>Extraindo texto da imagem...</Text>
+        )}
+        {texto && (
+          <>
+            <Text style={styles.labelText}>
+              Texto extraído (você pode editar):
+            </Text>
+            <View style={styles.textContainer}>
+              <TextInput
+                value={texto}
+                onChangeText={setTexto}
+                style={styles.textInput}
+                placeholder="Texto extraído aparecerá aqui. Você pode editar para corrigir erros."
+                editable={true}
+                multiline
+                textAlignVertical="top"
+              />
+            </View>
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -216,6 +298,10 @@ const styles = StyleSheet.create({
     boxShadow: "0px 6px 8px rgba(0, 0, 0, 0.25)",
     elevation: 7,
   },
+  submitBtnDisabled: {
+    backgroundColor: "#bbb",
+    opacity: 0.6,
+  },
   submitText: {
     fontSize: 42,
     fontWeight: "800",
@@ -223,5 +309,34 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(0,0,0,0.3)",
     textShadowOffset: { width: 0, height: 3 },
     textShadowRadius: 4,
+  },
+  loadingText: {
+    color: ORANGE,
+    marginTop: 10,
+    fontWeight: "bold",
+    textAlign: "center",
+    fontSize: 16,
+  },
+  labelText: {
+    marginTop: 16,
+    fontWeight: "bold",
+    fontSize: 16,
+    color: "#000",
+    marginBottom: 8,
+  },
+  textContainer: {
+    width: "94%",
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    minHeight: 100,
+    borderWidth: 2,
+    borderColor: ORANGE,
+    padding: 10,
+    marginBottom: 24,
+  },
+  textInput: {
+    minHeight: 90,
+    fontSize: 16,
+    color: "#1f1f1f",
   },
 });

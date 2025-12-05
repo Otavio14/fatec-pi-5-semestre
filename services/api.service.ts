@@ -1,6 +1,4 @@
 import axios from "axios";
-import Swal from "sweetalert2";
-import { IApiResponse } from "../types/index.type";
 import { authService } from "./auth.service";
 
 export const apiService = axios.create({
@@ -26,7 +24,7 @@ apiService.interceptors.request.use(
   }
 );
 
-export const errorSwal = (value) => {
+export const errorSwal = (value: any) => {
   console.log(value?.message);
 
   // const { mensagem, icone, titulo } = response?.data || {
