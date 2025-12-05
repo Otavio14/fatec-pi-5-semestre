@@ -1,4 +1,5 @@
-import React from "react";
+import React from 'react';
+import { CustomStatusModal } from '../components/CustomStatusModal';
 import {
   Image,
   ScrollView,
@@ -7,51 +8,72 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from "react-native";
+} from 'react-native';
 
-import { useRouter } from "expo-router";
+import { useRouter } from 'expo-router';
 
 export default function HomeSimulado() {
-  const router = useRouter()
+  const router = useRouter();
   const handleNovaQuestao = () => {
-    router.push("/criar-questao")
+    router.push('/criar-questao');
   };
 
   const handleNovoTemaRedacao = () => {
-    router.push("/criar-redacao")
+    router.push('/criar-redacao');
   };
 
   const handleNovoSimulado = () => {
-    router.push("/criar-simulado")
+    router.push('/criar-simulado');
   };
 
   const handleHome = () => {
-    router.push("/")
+    router.push('/');
   };
 
   return (
     <View style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#dedede" />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#dedede"
+      />
       <ScrollView contentContainerStyle={styles.content}>
-        <TouchableOpacity style={styles.botao} onPress={handleNovaQuestao}>
-          <Text style={styles.botaoTexto}>Criar nova Questão</Text>
+        <TouchableOpacity
+          style={styles.botao}
+          onPress={handleNovaQuestao}
+        >
+          <Text style={styles.botaoTexto}>
+            Criar nova Questão
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botao} onPress={handleNovoTemaRedacao}>
-          <Text style={styles.botaoTexto}>Criar novo Tema de Redação</Text>
+        <TouchableOpacity
+          style={styles.botao}
+          onPress={handleNovoTemaRedacao}
+        >
+          <Text style={styles.botaoTexto}>
+            Criar novo Tema de Redação
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botao} onPress={handleNovoSimulado}>
-          <Text style={styles.botaoTexto}>Criar novo Simulado</Text>
+        <TouchableOpacity
+          style={styles.botao}
+          onPress={handleNovoSimulado}
+        >
+          <Text style={styles.botaoTexto}>
+            Criar novo Simulado
+          </Text>
         </TouchableOpacity>
 
         <Image
-          source={require("@/assets/images/criar-questao-simulado.png")}
+          source={require('@/assets/images/criar-questao-simulado.png')}
           style={styles.image}
           resizeMode="contain"
         />
 
-        <TouchableOpacity style={styles.botaoHome} onPress={handleHome}>
+        <TouchableOpacity
+          style={styles.botaoHome}
+          onPress={handleHome}
+        >
           <Text style={styles.botaoHomeTexto}>Home</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -59,8 +81,8 @@ export default function HomeSimulado() {
   );
 }
 
-const ORANGE = "#FFA747";
-const GREY_BG = "#dedede";
+const ORANGE = '#FFA747';
+const GREY_BG = '#dedede';
 
 const styles = StyleSheet.create({
   safe: {
@@ -69,30 +91,30 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 20,
   },
   botao: {
-    width: "88%",
+    width: '88%',
     backgroundColor: ORANGE,
     borderRadius: 18,
     marginVertical: 12,
     paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.17,
     shadowRadius: 6,
     elevation: 5,
   },
   botaoTexto: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 22,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     letterSpacing: 1,
-    textShadowColor: "rgba(0,0,0,0.13)",
+    textShadowColor: 'rgba(0,0,0,0.13)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 3,
   },
@@ -102,13 +124,13 @@ const styles = StyleSheet.create({
     marginVertical: 30,
   },
   botaoHome: {
-    width: "88%",
+    width: '88%',
     backgroundColor: ORANGE,
     borderRadius: 18,
     paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.17,
     shadowRadius: 6,
@@ -116,11 +138,11 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   botaoHomeTexto: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 28,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     letterSpacing: 1,
-    textShadowColor: "rgba(0,0,0,0.13)",
+    textShadowColor: 'rgba(0,0,0,0.13)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 3,
   },
