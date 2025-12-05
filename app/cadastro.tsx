@@ -35,7 +35,6 @@ export default function CadastroScreen() {
 
   const router = useRouter();
   const usuarioService = new UsuarioService();
-  const backgroundColor = useThemeColor({}, "background");
 
   const handleRegister = (e: GestureResponderEvent) => {
     e.preventDefault();
@@ -79,7 +78,7 @@ export default function CadastroScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
-          contentContainerStyle={{ ...styles.scroll, backgroundColor }}
+          contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.card}>

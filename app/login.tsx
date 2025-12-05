@@ -13,7 +13,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useThemeColor } from "../hooks/use-theme-color";
 import { authService } from "../services/auth.service";
 import { UsuarioService } from "../services/usuario.service";
 
@@ -30,7 +29,6 @@ export default function LoginScreen() {
 
   const router = useRouter();
   const usuarioService = new UsuarioService();
-  const backgroundColor = useThemeColor({}, "background");
 
   const handleLogin = (e: GestureResponderEvent) => {
     e.preventDefault();
@@ -74,7 +72,7 @@ export default function LoginScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
-          contentContainerStyle={{ ...styles.scroll, backgroundColor }}
+          contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.card}>

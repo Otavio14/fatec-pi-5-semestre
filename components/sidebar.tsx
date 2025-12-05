@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { authService } from "../services/auth.service";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type IRota = {
   rota: Href;
@@ -28,6 +29,7 @@ export function Sidebar({
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   const translateX = useRef(new Animated.Value(-300)).current;
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const rotasAdmin: Array<IRota> = [
     { rota: "/admin", nome: "Home" },
@@ -75,7 +77,16 @@ export function Sidebar({
 
   return (
     <>
-      <Animated.View style={[styles.sidebar, { transform: [{ translateX }] }]}>
+      <Animated.View
+        style={[
+          styles.sidebar,
+          {
+            transform: [{ translateX }],
+            top: 60 + insets.top,
+            height: Dimensions.get("window").height - 60 - insets.top,
+          },
+        ]}
+      >
         {isAuthenticatedAdmin ? (
           <Fragment>
             {rotasAdmin.map((m, i) => (
@@ -126,7 +137,15 @@ export function Sidebar({
             setIsSidebarOpen(false);
           }}
         >
-          <View style={styles.backdrop} />
+          <View
+            style={[
+              styles.backdrop,
+              {
+                top: 60 + insets.top,
+                height: Dimensions.get("window").height - 60 - insets.top,
+              },
+            ]}
+          />
         </Pressable>
       ) : null}
     </>
@@ -138,6 +157,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 60,
     left: 0,
+    right: 0,
     width: 300,
     height: Dimensions.get("window").height - 60,
     paddingHorizontal: 25,
