@@ -16,6 +16,7 @@ import { UsuarioService } from "../services/usuario.service";
 import { useRouter } from "expo-router";
 import { authService } from "../services/auth.service";
 import Swal from "sweetalert2";
+import { useThemeColor } from "../hooks/use-theme-color";
 
 interface IRegisterForm {
   email: string;
@@ -34,6 +35,7 @@ export default function CadastroScreen() {
 
   const router = useRouter();
   const usuarioService = new UsuarioService();
+  const backgroundColor = useThemeColor({}, "background");
 
   const handleRegister = (e: GestureResponderEvent) => {
     e.preventDefault();
@@ -71,12 +73,13 @@ export default function CadastroScreen() {
   return (
     <View style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
+
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={{ ...styles.scroll, backgroundColor }}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.card}>
@@ -172,33 +175,31 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: GREY_BG,
     display: "flex",
-    flexDirection: "column",
     width: "100%",
   },
   flex: {
-    flex: 1,
     display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    width: "100%",
+    height: "100%",
   },
   scroll: {
-    flexGrow: 1,
-    justifyContent: "center",
-    paddingHorizontal: 28,
+    alignItems: "center",
+    display: "flex",
+    height: "100%",
     paddingBottom: 40,
+    paddingHorizontal: 28,
+    width: "100%",
   },
   card: {
     backgroundColor: "#ffffff",
-    borderRadius: 8,
-    paddingVertical: 40,
-    paddingHorizontal: 28,
+    borderRadius: 6,
     boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.08)",
-    elevation: 4,
-    maxWidth: 800,
-    width: "100%",
     display: "flex",
-    flexDirection: "column",
+    elevation: 4,
+    marginVertical: "auto",
+    maxWidth: 500,
+    paddingHorizontal: 36,
+    paddingVertical: 20,
+    width: "100%",
   },
   title: {
     fontSize: 34,

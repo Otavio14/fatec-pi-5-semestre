@@ -8,7 +8,7 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Sidebar } from "../components/sidebar";
@@ -24,7 +24,8 @@ export default function RootLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    // <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <Fragment>
       <Stack
         screenOptions={{
           header: () => <Header setIsSidebarOpen={setIsSidebarOpen} />,
@@ -43,7 +44,8 @@ export default function RootLayout() {
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
       />
-    </ThemeProvider>
+      {/* </ThemeProvider> */}
+    </Fragment>
   );
 }
 
@@ -64,7 +66,7 @@ function Header({
             setIsSidebarOpen((prev) => !prev);
           }}
         >
-          <IconSymbol size={28} name="line.3.horizontal" color={iconColor} />
+          <IconSymbol size={36} name="line.3.horizontal" color={"#FFA143"} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -83,7 +85,7 @@ function Header({
             router.push("/login");
           }}
         >
-          <IconSymbol size={28} name="person.circle.fill" color={iconColor} />
+          <IconSymbol size={36} name="person.circle.fill" color={"#FFA143"} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -108,5 +110,6 @@ const styles = StyleSheet.create({
     height: 50,
     aspectRatio: 1,
     resizeMode: "contain",
+    maxWidth: 70,
   },
 });

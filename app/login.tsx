@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   GestureResponderEvent,
   KeyboardAvoidingView,
@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useThemeColor } from "../hooks/use-theme-color";
 import { authService } from "../services/auth.service";
 import { UsuarioService } from "../services/usuario.service";
 
@@ -29,36 +30,36 @@ export default function LoginScreen() {
 
   const router = useRouter();
   const usuarioService = new UsuarioService();
+  const backgroundColor = useThemeColor({}, "background");
 
   const handleLogin = (e: GestureResponderEvent) => {
     e.preventDefault();
 
-    usuarioService
-      .login(loginForm)
-      .then(async ({ data: { dados } }) => {
-        console.log("Passou");
-        
-        await authService.saveToken(dados);
+    usuarioService.login(loginForm).then(async ({ data: { dados } }) => {
+      await authService.saveToken(dados);
 
-        if (await authService.isAuthenticatedAdmin()) {
-          router.push("/admin");
-        } else if (await authService.isAuthenticated()) {
-          router.push("/aluno");
-        }
-      })
-      // .catch((e) => {
-      //   console.log(e);
-      // });
+      if (await authService.isAuthenticatedAdmin()) {
+        router.push("/admin");
+      } else if (await authService.isAuthenticated()) {
+        router.push("/aluno");
+      }
+    });
+    // .catch((e) => {
+    //   console.log(e);
+    // });
     // .catch(errorSwal);
   };
 
-  // useEffect(() => {
-  //   if (authService.isAuthenticatedAdmin()) {
-  //     router.push("/admin");
-  //   } else if (authService.isAuthenticated()) {
-  //     router.push("/aluno");
-  //   }
-  // }, [router]);
+  useEffect(() => {
+    async function fetchData() {
+      if (await authService.isAuthenticatedAdmin()) {
+        router.push("/admin");
+      } else if (await authService.isAuthenticated()) {
+        router.push("/aluno");
+      }
+    }
+    fetchData();
+  }, [router]);
 
   const handleNavigateSignUp = () => {
     router.push("/cadastro");
@@ -73,7 +74,7 @@ export default function LoginScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={{ ...styles.scroll, backgroundColor }}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.card}>
@@ -131,6 +132,7 @@ const styles = StyleSheet.create({
     display: "flex",
     flex: 1,
     backgroundColor: GREY_BG,
+    width: "100%",
   },
   topBar: {
     height: 72,
@@ -142,49 +144,28 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#e5e5e5",
   },
-  line: {
-    height: 5,
-    backgroundColor: ORANGE,
-    borderRadius: 2,
-  },
-  logoWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  logo: {
-    width: 42,
-    height: 42,
-  },
-  brand: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1d4fa8",
-    letterSpacing: 0.5,
-  },
   flex: {
     display: "flex",
     height: "100%",
   },
   scroll: {
-    display: "flex",
-    flexDirection: "column",
     alignItems: "center",
-    paddingHorizontal: 28,
-    paddingBottom: 40,
-    width: "100%",
+    display: "flex",
     height: "100%",
+    paddingBottom: 40,
+    paddingHorizontal: 28,
+    width: "100%",
   },
   card: {
     backgroundColor: "#ffffff",
     borderRadius: 6,
-    paddingVertical: 20,
-    paddingHorizontal: 36,
     boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.08)",
     elevation: 4,
-    maxWidth: 500,
-    width: "auto",
     marginVertical: "auto",
+    maxWidth: 500,
+    paddingHorizontal: 36,
+    paddingVertical: 20,
+    width: "auto",
   },
   title: {
     fontSize: 34,

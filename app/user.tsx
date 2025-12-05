@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import { UsuarioService } from "../services/usuario.service";
-import { authService } from "../services/auth.service";
+import { decodeJwt } from "jose";
+import React, { useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -11,6 +10,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { authService } from "../services/auth.service";
+import { UsuarioService } from "../services/usuario.service";
 
 export default function UserCard() {
   const router = useRouter();
@@ -21,9 +22,9 @@ export default function UserCard() {
     async function fetchUser() {
       const token = await authService.getToken();
       if (token) {
-        const { id } = require("jose").decodeJwt(token);
-        usuarioService.findOne(id).then(res => {
-          if(res.data.valido) setNome(res.data.dados.nome);
+        const { id } = decodeJwt(token) as { id: number };
+        usuarioService.findOne(id).then((res) => {
+          if (res.data.valido) setNome(res.data.dados.nome);
         });
       }
     }

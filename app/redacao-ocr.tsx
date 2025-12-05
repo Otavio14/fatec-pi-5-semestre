@@ -11,8 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import * as ImagePicker from 'expo-image-picker';
-import Tesseract from 'tesseract.js';
+import * as ImagePicker from "expo-image-picker";
+import Tesseract from "tesseract.js";
 
 const ORANGE = "#FFA747";
 const GREY_BG = "#e4e4e4";
@@ -26,27 +26,28 @@ export default function RedacaoOcrScreen() {
 
   const handleCapture = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      alert('Permissão de câmera necessária.');
+    if (status !== "granted") {
+      alert("Permissão de câmera necessária.");
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       quality: 1,
+      allowsEditing: true,
     });
-    
+
     if (!result.canceled && result.assets && result.assets.length > 0) {
       setPhoto(result.assets[0].uri);
       setLoading(true);
       try {
-        const { data: { text } } = await Tesseract.recognize(
-          result.assets[0].uri,
-          'por',
-          { logger: m => console.log(m) }
-        );
+        const {
+          data: { text },
+        } = await Tesseract.recognize(result.assets[0].uri, "por", {
+          logger: (m) => console.log(m),
+        });
         setTexto(text || "");
       } catch (error) {
-        console.error('Erro ao extrair texto:', error);
+        console.error("Erro ao extrair texto:", error);
         setTexto("");
         alert("Erro ao extrair texto da imagem!");
       } finally {
@@ -95,7 +96,10 @@ export default function RedacaoOcrScreen() {
             </View>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.submitBtn, !texto.trim() && styles.submitBtnDisabled]}
+            style={[
+              styles.submitBtn,
+              !texto.trim() && styles.submitBtnDisabled,
+            ]}
             onPress={handleSubmit}
             accessibilityRole="button"
             accessibilityLabel="Enviar redação"
@@ -109,7 +113,9 @@ export default function RedacaoOcrScreen() {
         )}
         {texto && (
           <>
-            <Text style={styles.labelText}>Texto extraído (você pode editar):</Text>
+            <Text style={styles.labelText}>
+              Texto extraído (você pode editar):
+            </Text>
             <View style={styles.textContainer}>
               <TextInput
                 value={texto}
@@ -176,7 +182,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     borderRadius: 30,
-    resizeMode: "cover",
+    resizeMode: "contain",
   },
   placeholderText: {
     color: "#fff",
@@ -313,4 +319,3 @@ const styles = StyleSheet.create({
     color: "#1f1f1f",
   },
 });
-

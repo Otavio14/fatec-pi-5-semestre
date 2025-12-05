@@ -1,7 +1,20 @@
-import { useRouter } from "expo-router";
+import { Href, useRouter } from "expo-router";
 import { Fragment, useEffect, useRef, useState } from "react";
-import { Animated, StyleSheet, Text, TouchableOpacity } from "react-native";
+import {
+  Animated,
+  Dimensions,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { authService } from "../services/auth.service";
+
+type IRota = {
+  rota: Href;
+  nome: string;
+};
 
 export function Sidebar({
   isSidebarOpen,
@@ -16,6 +29,32 @@ export function Sidebar({
 
   const translateX = useRef(new Animated.Value(-300)).current;
   const router = useRouter();
+  const rotasAdmin: Array<IRota> = [
+    { rota: "/admin", nome: "Home" },
+    { rota: "/admin/usuarios", nome: "Usuários" },
+    { rota: "/criar-questao-simulado", nome: "Criar Questão Simulado" },
+    { rota: "/criar-questao", nome: "Criar Questão" },
+    { rota: "/criar-redacao", nome: "Criar Redação" },
+  ];
+  const rotasAluno: Array<IRota> = [
+    { rota: "/aluno", nome: "Home" },
+    { rota: "/user", nome: "Seu Perfil" },
+  ];
+  const rotasPublicas: Array<IRota> = [
+    { rota: "/login", nome: "Login" },
+    { rota: "/cadastro", nome: "Cadastro" },
+    { rota: "/redacao-ocr", nome: "Redação OCR" },
+    { rota: "/simulado", nome: "Simulado" },
+    // { rota: "/criar-simulado", nome: "Criar Simulado" },
+    // { rota: "/error", nome: "Error" },
+    // { rota: "/pergunta", nome: "Pergunta" },
+    // { rota: "/questao", nome: "Questão" },
+    // { rota: "/realizar_redacao", nome: "Realizar Redação" },
+    // { rota: "/redacao-recebida", nome: "Redação Recebida" },
+    // { rota: "/redacao", nome: "Redação" },
+    // { rota: "/simulado-aleatorio", nome: "Simulado Aleatório" },
+    // { rota: "/simulado-criado", nome: "Simulado Criado" },
+  ];
 
   useEffect(() => {
     async function fetchData() {
@@ -39,42 +78,57 @@ export function Sidebar({
       <Animated.View style={[styles.sidebar, { transform: [{ translateX }] }]}>
         {isAuthenticatedAdmin ? (
           <Fragment>
-            <TouchableOpacity
-              onPress={() => {
-                setIsSidebarOpen(false);
-                router.push("/admin");
-              }}
-            >
-              <Text>Home</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                setIsSidebarOpen(false);
-                router.push("/admin/usuarios");
-              }}
-            >
-              <Text>Usuários</Text>
-            </TouchableOpacity>
+            {rotasAdmin.map((m, i) => (
+              <TouchableOpacity
+                key={i}
+                onPress={() => {
+                  setIsSidebarOpen(false);
+                  router.push(m.rota);
+                }}
+              >
+                <Text style={styles.text}>{m.nome}</Text>
+              </TouchableOpacity>
+            ))}
           </Fragment>
         ) : isAuthenticated ? (
           <Fragment>
-            <TouchableOpacity
-              onPress={() => {
-                router.push("/aluno");
-              }}
-            >
-              <Text>Home</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                router.push("/aluno");
-              }}
-            >
-              <Text>Seus Simulados</Text>
-            </TouchableOpacity>
+            {rotasAluno.map((m, i) => (
+              <TouchableOpacity
+                key={i}
+                onPress={() => {
+                  setIsSidebarOpen(false);
+                  router.push(m.rota);
+                }}
+              >
+                <Text style={styles.text}>{m.nome}</Text>
+              </TouchableOpacity>
+            ))}
           </Fragment>
-        ) : null}
+        ) : (
+          <Fragment>
+            {rotasPublicas.map((m, i) => (
+              <TouchableOpacity
+                key={i}
+                onPress={() => {
+                  setIsSidebarOpen(false);
+                  router.push(m.rota);
+                }}
+              >
+                <Text style={styles.text}>{m.nome}</Text>
+              </TouchableOpacity>
+            ))}
+          </Fragment>
+        )}
       </Animated.View>
+      {isSidebarOpen ? (
+        <Pressable
+          onPress={() => {
+            setIsSidebarOpen(false);
+          }}
+        >
+          <View style={styles.backdrop} />
+        </Pressable>
+      ) : null}
     </>
   );
 }
@@ -85,22 +139,27 @@ const styles = StyleSheet.create({
     top: 60,
     left: 0,
     width: 300,
-    height: "100%",
-    backgroundColor: "#fff",
+    height: Dimensions.get("window").height - 60,
     paddingHorizontal: 25,
     justifyContent: "center",
-    alignItems: "center",
     zIndex: 1000,
-    boxShadow: "2px 0px 3.84px rgba(0, 0, 0, 0.25)",
+    boxShadow: "2px 4px 3.84px rgba(0, 0, 0, 0.25)",
     elevation: 5,
+    backgroundColor: "#F3F3F3",
+    gap: 16,
   },
-  toggleButton: {
-    position: "absolute",
-    top: 50,
-    left: 10,
-    zIndex: 1001,
-    padding: 10,
-    backgroundColor: "#007AFF",
-    borderRadius: 5,
+  text: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#0c2d57",
+  },
+  backdrop: {
+    position: "fixed",
+    top: 60,
+    left: 0,
+    width: Dimensions.get("window").width,
+    height: Dimensions.get("window").height - 60,
+    overflow: "hidden",
+    backgroundColor: "transparent",
   },
 });

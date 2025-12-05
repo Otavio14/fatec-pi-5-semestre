@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import {
   Image,
   ScrollView,
@@ -14,15 +15,20 @@ const BLUE = "#4A82F8";
 const ORANGE = "#FFA747";
 
 export default function HomeScreen() {
+  const router = useRouter();
+
   const handleGoAlternativas = () => {
     // empty
   };
+
   const handleGoRedacao = () => {
-    // empty
+    router.push("/redacao-ocr");
   };
-  const handleGoVestibular = () => {
-    // empty
+
+  const handleGoVestibularCompleto = () => {
+    router.push("/simulado");
   };
+
   const handleBanner = () => {
     // empty
   };
@@ -35,6 +41,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.hero}>Prepare-se com eficiência</Text>
+        <View style={styles.square} />
 
         <View style={styles.cardsGroup}>
           <View style={styles.card}>
@@ -99,7 +106,7 @@ export default function HomeScreen() {
               </Text>
               <TouchableOpacity
                 style={styles.cardButton}
-                onPress={handleGoVestibular}
+                onPress={handleGoVestibularCompleto}
               >
                 <Text style={styles.cardButtonText}>➜</Text>
               </TouchableOpacity>
@@ -125,7 +132,7 @@ export default function HomeScreen() {
               </Text>
               <TouchableOpacity
                 style={styles.cardButton}
-                onPress={handleGoVestibular}
+                onPress={handleGoVestibularCompleto}
               >
                 <Text style={styles.cardButtonText}>➜</Text>
               </TouchableOpacity>
@@ -157,106 +164,9 @@ export default function HomeScreen() {
 
         <Text style={styles.footer}>Todos os Direitos Reservados</Text>
       </ScrollView>
-
-      {/* Decorative circles */}
-      <View style={styles.square} />
-      {/* {CIRCLES.map((c, i) => (
-        <View
-          key={i}
-          style={[
-            styles.circle,
-            {
-              width: c.width,
-              height: c.height,
-              top: c.top,
-              left: c.left,
-            },
-          ]}
-        />
-      ))} */}
     </View>
   );
 }
-
-const CIRCLES = [
-  {
-    width: 163,
-    height: 157,
-    left: 864,
-    top: 231,
-    boxShadow: "0px 4px 100px rgba(0, 0, 0, 0.25)",
-  },
-  {
-    width: 114,
-    height: 110,
-    left: 917,
-    top: 576,
-    boxShadow: "0px 4px 40px rgba(0, 0, 0, 0.25)",
-  },
-  {
-    width: 114,
-    height: 110,
-    left: 694,
-    top: 804,
-    boxShadow: "0px 4px 40px rgba(0, 0, 0, 0.25)",
-  },
-  {
-    width: 114,
-    height: 110,
-    left: 75,
-    top: 694,
-    boxShadow: "0px 4px 40px rgba(0, 0, 0, 0.25)",
-  },
-  {
-    width: 66,
-    height: 64,
-    left: 926,
-    top: 1280,
-    boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.25)",
-  },
-  {
-    width: 66,
-    height: 64,
-    left: 116,
-    top: 2027,
-    boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.25)",
-  },
-  {
-    width: 50,
-    height: 48,
-    left: 893,
-    top: 2399,
-    boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.25)",
-  },
-  {
-    width: 66,
-    height: 64,
-    left: 27,
-    top: 1086,
-    boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.25)",
-  },
-  {
-    width: 100, // 213,
-    height: 100,
-    left: 130, // 266,
-    top: 150, // 574,
-    boxShadow: "0px 4px 100px rgba(0, 0, 0, 0.25)",
-  },
-  {
-    width: 213,
-    height: 205,
-    left: 587,
-    top: 285,
-    boxShadow: "0px 4px 100px rgba(0, 0, 0, 0.25)",
-  },
-  {
-    width: 163,
-    height: 157,
-    left: 11,
-    top: 344,
-    boxShadow: "0px 4px 40px rgba(0, 0, 0, 0.25)",
-  },
-];
 
 const styles = StyleSheet.create({
   safe: {
@@ -375,16 +285,26 @@ const styles = StyleSheet.create({
   },
   circle: {
     position: "absolute",
-    backgroundColor: "#F3F3F3",
+    backgroundColor: "#fff",
     borderRadius: 100,
     zIndex: -1,
   },
   square: {
+    backgroundColor: "#F3F3F3",
+    height: 130,
+    left: 0,
     position: "absolute",
     top: 0,
-    backgroundColor: "#fff",
-    zIndex: -1,
-    height: 130,
     width: "100%",
+    zIndex: -1,
+    // clipPath: "inset(0px -10px 0px 0px)",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 2,
+      height: 0,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 });
