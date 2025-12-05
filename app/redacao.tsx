@@ -70,7 +70,8 @@ export default function RedacaoScreen() {
         pathname: "/redacao-recebida",
         params: {
           fromSimulado: 'true',
-          respostas: params.respostas as string
+          respostas: params.respostas as string,
+          textoRedacao: texto
         }
       });
     } else if (params.fromRealizarRedacao === 'true') {
@@ -78,11 +79,17 @@ export default function RedacaoScreen() {
       router.push({
         pathname: "/redacao-recebida",
         params: {
-          fromRealizarRedacao: 'true'
+          fromRealizarRedacao: 'true',
+          textoRedacao: texto
         }
       });
     } else {
-      router.push("/redacao-recebida");
+      router.push({
+        pathname: "/redacao-recebida",
+        params: {
+          textoRedacao: texto
+        }
+      });
     }
   };
 

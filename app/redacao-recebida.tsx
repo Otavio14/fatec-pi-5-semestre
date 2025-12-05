@@ -14,36 +14,81 @@ export default function RedacaoRecebidaScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   
-  // Redirecionar automaticamente após 3 segundos se veio do simulado
+  // Redirecionar automaticamente após 3 segundos para feedback-ia
   useEffect(() => {
-    if (params.fromSimulado === 'true' && params.respostas) {
-      const timer = setTimeout(() => {
-        router.push({
-          pathname: "/simulado",
-          params: {
-            respostas: params.respostas as string,
-            redacaoEnviada: 'true'
-          }
-        });
-      }, 3000);
-
-      return () => clearTimeout(timer);
-    } else if (params.fromRealizarRedacao === 'true') {
-      const timer = setTimeout(() => {
-        router.push({
-          pathname: "/realizar_redacao",
-          params: {
-            redacaoEnviada: 'true'
-          }
-        });
-      }, 3000);
-
-      return () => clearTimeout(timer);
+    const textoRedacao = params.textoRedacao as string;
+    
+    if (!textoRedacao) {
+      // Se não tiver texto, redirecionar normalmente
+      if (params.fromSimulado === 'true' && params.respostas) {
+        const timer = setTimeout(() => {
+          router.push({
+            pathname: "/simulado",
+            params: {
+              respostas: params.respostas as string,
+              redacaoEnviada: 'true'
+            }
+          });
+        }, 3000);
+        return () => clearTimeout(timer);
+      } else if (params.fromRealizarRedacao === 'true') {
+        const timer = setTimeout(() => {
+          router.push({
+            pathname: "/realizar_redacao",
+            params: {
+              redacaoEnviada: 'true'
+            }
+          });
+        }, 3000);
+        return () => clearTimeout(timer);
+      }
+      return;
     }
+
+    // Redirecionar para feedback-ia após 3 segundos
+    const timer = setTimeout(() => {
+      const navigationParams: any = {
+        textoRedacao: textoRedacao
+      };
+      
+      if (params.fromSimulado === 'true' && params.respostas) {
+        navigationParams.fromSimulado = 'true';
+        navigationParams.respostas = params.respostas as string;
+      } else if (params.fromRealizarRedacao === 'true') {
+        navigationParams.fromRealizarRedacao = 'true';
+      }
+      
+      router.push({
+        pathname: "/feedback-ia",
+        params: navigationParams
+      });
+    }, 3000);
+
+    return () => clearTimeout(timer);
   }, [params, router]);
   
   const handleContinue = () => {
-    router.push("/");
+    const textoRedacao = params.textoRedacao as string;
+    
+    if (textoRedacao) {
+      const navigationParams: any = {
+        textoRedacao: textoRedacao
+      };
+      
+      if (params.fromSimulado === 'true' && params.respostas) {
+        navigationParams.fromSimulado = 'true';
+        navigationParams.respostas = params.respostas as string;
+      } else if (params.fromRealizarRedacao === 'true') {
+        navigationParams.fromRealizarRedacao = 'true';
+      }
+      
+      router.push({
+        pathname: "/feedback-ia",
+        params: navigationParams
+      });
+    } else {
+      router.push("/");
+    }
   };
 
   return (
