@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   ScrollView,
   StatusBar,
@@ -6,18 +6,26 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from "react-native";
+} from 'react-native';
 
-const ORANGE = "#FFA747";
-const GREY_BG = "#dedede";
+const ORANGE = '#FFA747';
+const GREY_BG = '#dedede';
 
 const QUESTION_TEXT =
-  "Um número perpendicular a bissetriz como cosseno corresponde a 4x^9.\n\nDito isto, qual a cor do cavalo branco de napoleão?";
+  'Um número perpendicular a bissetriz como cosseno corresponde a 4x^9.\n\nDito isto, qual a cor do cavalo branco de napoleão?';
 
-const OPTIONS = ["Azul", "Amarelo", "Branco", "Marrom", "Dodge Charger"];
+const OPTIONS = [
+  'Azul',
+  'Amarelo',
+  'Branco',
+  'Marrom',
+  'Dodge Charger',
+];
 
 export default function QuestaoScreen() {
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(
+    null,
+  );
 
   const handleSelect = (opt: string) => {
     // empty
@@ -30,10 +38,15 @@ export default function QuestaoScreen() {
 
   return (
     <View style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor={GREY_BG} />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={GREY_BG}
+      />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.questionCard}>
-          <Text style={styles.question}>{QUESTION_TEXT}</Text>
+          <Text style={styles.question}>
+            {QUESTION_TEXT}
+          </Text>
         </View>
 
         <View style={styles.optionsBlock}>
@@ -51,7 +64,10 @@ export default function QuestaoScreen() {
                 accessibilityLabel={`Selecionar opção ${opt}`}
               >
                 <View
-                  style={[styles.bullet, isSelected && styles.bulletSelected]}
+                  style={[
+                    styles.bullet,
+                    isSelected && styles.bulletSelected,
+                  ]}
                 />
                 <Text style={styles.optionText}>{opt}</Text>
               </TouchableOpacity>
@@ -83,20 +99,20 @@ const styles = StyleSheet.create({
   },
   questionCard: {
     marginTop: 28,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: '#f5f5f5',
     borderRadius: 42,
     paddingVertical: 32,
     paddingHorizontal: 24,
-    boxShadow: "0px 6px 8px rgba(0, 0, 0, 0.25)",
+    boxShadow: '0px 6px 8px rgba(0, 0, 0, 0.25)',
     elevation: 6,
   },
   question: {
     fontSize: 34,
-    fontWeight: "900",
-    color: "#222",
+    fontWeight: '900',
+    color: '#222',
     lineHeight: 40,
     letterSpacing: 0.5,
-    textShadowColor: "rgba(0,0,0,0.35)",
+    textShadowColor: 'rgba(0,0,0,0.35)',
     textShadowOffset: { width: 0, height: 3 },
     textShadowRadius: 4,
   },
@@ -105,17 +121,17 @@ const styles = StyleSheet.create({
     gap: 22,
   },
   optionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
     borderRadius: 44,
     paddingVertical: 20,
     paddingHorizontal: 22,
-    boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.25)",
+    boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.25)',
     elevation: 4,
   },
   optionRowSelected: {
-    boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.35)",
+    boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.35)',
     elevation: 6,
   },
   bullet: {
@@ -124,7 +140,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 6,
     borderColor: ORANGE,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     marginRight: 24,
   },
   bulletSelected: {
@@ -132,10 +148,10 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 34,
-    fontWeight: "800",
-    color: "#222",
+    fontWeight: '800',
+    color: '#222',
     flexShrink: 1,
-    textShadowColor: "rgba(0,0,0,0.3)",
+    textShadowColor: 'rgba(0,0,0,0.3)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 3,
   },
@@ -144,16 +160,16 @@ const styles = StyleSheet.create({
     backgroundColor: ORANGE,
     borderRadius: 44,
     paddingVertical: 26,
-    alignItems: "center",
-    justifyContent: "center",
-    boxShadow: "0px 6px 8px rgba(0, 0, 0, 0.3)",
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0px 6px 8px rgba(0, 0, 0, 0.3)',
     elevation: 6,
   },
   confirmText: {
     fontSize: 38,
-    fontWeight: "800",
-    color: "#fff",
-    textShadowColor: "rgba(0,0,0,0.25)",
+    fontWeight: '800',
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.25)',
     textShadowOffset: { width: 0, height: 3 },
     textShadowRadius: 4,
   },

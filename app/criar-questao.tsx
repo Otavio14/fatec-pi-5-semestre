@@ -3,7 +3,6 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -15,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { CustomStatusModal } from "../components/CustomStatusModal";
 import { AlternativaService } from "../services/alternativa.service";
 import { ProvaService } from "../services/prova.service";
 import { QuestaoService } from "../services/questao.service";
@@ -43,6 +43,11 @@ export default function CriarQuestaoScreen() {
   ]);
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
+
+  // Estados para o Modal Personalizado
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<"success" | "error">("success");
+  const [modalMessage, setModalMessage] = useState("");
 
   const router = useRouter();
   const provaService = new ProvaService();
@@ -79,15 +84,21 @@ export default function CriarQuestaoScreen() {
     setAlternativas(novasAlternativas);
   };
 
+  const showModal = (type: "success" | "error", message: string) => {
+    setModalType(type);
+    setModalMessage(message);
+    setModalVisible(true);
+  };
+
   const handleSalvar = async () => {
     // Validações
     if (!idProvaSelecionada) {
-      Alert.alert("Atenção", "Selecione uma prova.");
+      showModal("error", "Selecione uma prova.");
       return;
     }
 
     if (!numeroQuestao || !textoQuestao) {
-      Alert.alert("Atenção", "Preencha o número e o texto da questão.");
+      showModal("error", "Preencha o número e o texto da questão.");
       return;
     }
 
@@ -96,13 +107,13 @@ export default function CriarQuestaoScreen() {
     );
 
     if (alternativasPreenchidas.length < 2) {
-      Alert.alert("Atenção", "Preencha pelo menos 2 alternativas.");
+      showModal("error", "Preencha pelo menos 2 alternativas.");
       return;
     }
 
     const temCorreta = alternativas.some((alt) => alt.correta);
     if (!temCorreta) {
-      Alert.alert("Atenção", "Selecione qual alternativa é a correta.");
+      showModal("error", "Selecione qual alternativa é a correta.");
       return;
     }
 
@@ -130,7 +141,7 @@ export default function CriarQuestaoScreen() {
 
       await Promise.all(alternativasPromises);
 
-      Alert.alert("Sucesso", "Questão criada com sucesso!");
+      showModal("success", "Questão criada com sucesso!");
 
       // Limpar formulário
       setNumeroQuestao("");
@@ -144,7 +155,7 @@ export default function CriarQuestaoScreen() {
       ]);
     } catch (error) {
       console.error("Erro ao salvar questão:", error);
-      Alert.alert("Erro", "Erro ao salvar a questão. Tente novamente.");
+      showModal("error", "Erro ao salvar a questão. Tente novamente.");
     } finally {
       setSalvando(false);
     }
@@ -275,6 +286,13 @@ export default function CriarQuestaoScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <CustomStatusModal
+        visible={modalVisible}
+        type={modalType}
+        message={modalMessage}
+        onClose={() => setModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
