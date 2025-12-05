@@ -1,4 +1,5 @@
-import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Dimensions,
@@ -11,7 +12,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import * as ImagePicker from "expo-image-picker";
 import Tesseract from "tesseract.js";
 
 const ORANGE = "#FFA747";
@@ -20,6 +20,7 @@ const DARK_GREY = "#8f8b8b";
 
 export default function RedacaoOcrScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const [photo, setPhoto] = useState<string | null>(null);
   const [texto, setTexto] = useState("");
   const [loading, setLoading] = useState(false);
@@ -62,7 +63,19 @@ export default function RedacaoOcrScreen() {
       return;
     }
     // (lógica de criação da redação (integração com backend))
-    router.push("/redacao-recebida");
+    
+    // Se veio do simulado, voltar para o simulado com as respostas preservadas
+    if (params.fromSimulado === 'true' && params.respostas) {
+      router.push({
+        pathname: "/simulado",
+        params: {
+          respostas: params.respostas as string,
+          redacaoEnviada: 'true'
+        }
+      });
+    } else {
+      router.push("/redacao-recebida");
+    }
   };
 
   return (

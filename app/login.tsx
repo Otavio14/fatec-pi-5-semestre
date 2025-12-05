@@ -30,30 +30,34 @@ export default function LoginScreen() {
   const router = useRouter();
   const usuarioService = new UsuarioService();
 
-  const handleLogin = (e: GestureResponderEvent) => {
+  const handleLogin = async (e: GestureResponderEvent) => {
     e.preventDefault();
-
-    usuarioService.login(loginForm).then(async ({ data: { dados } }) => {
+    try {
+      const {
+        data: { dados },
+      } = await usuarioService.login(loginForm);
       await authService.saveToken(dados);
-
       if (await authService.isAuthenticatedAdmin()) {
         router.push("/admin");
       } else if (await authService.isAuthenticated()) {
         router.push("/aluno");
       }
-    });
-    // .catch((e) => {
-    //   console.log(e);
-    // });
-    // .catch(errorSwal);
+      console.log(dados);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   useEffect(() => {
     async function fetchData() {
-      if (await authService.isAuthenticatedAdmin()) {
-        router.push("/admin");
-      } else if (await authService.isAuthenticated()) {
-        router.push("/aluno");
+      try {
+        if (await authService.isAuthenticatedAdmin()) {
+          router.push("/admin");
+        } else if (await authService.isAuthenticated()) {
+          router.push("/aluno");
+        }
+      } catch (error) {
+        console.log(error);
       }
     }
     fetchData();

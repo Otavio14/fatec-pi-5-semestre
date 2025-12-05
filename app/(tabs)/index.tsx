@@ -19,11 +19,11 @@ export default function HomeScreen() {
   const router = useRouter();
 
   const handleGoAlternativas = () => {
-    // empty
+    router.push("/questoes-alternativas");
   };
 
   const handleGoRedacao = () => {
-    router.push("/redacao-ocr");
+    router.push("/realizar_redacao");
   };
 
   const handleGoVestibularCompleto = () => {
@@ -104,32 +104,6 @@ export default function HomeScreen() {
               <Text style={styles.cardDesc}>
                 Simule a última prova completa até o momento com tempo
                 cronometrado.
-              </Text>
-              <TouchableOpacity
-                style={styles.cardButton}
-                onPress={handleGoVestibularCompleto}
-              >
-                <Text style={styles.cardButtonText}>➜</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.card}>
-            <View style={styles.cardIconWrap}>
-              <Image
-                source={require("@/assets/images/estudando.png")}
-                style={styles.cardIcon}
-                resizeMode="contain"
-              />
-            </View>
-            <View style={styles.cardText}>
-              <Text style={styles.cardTitle}>
-                Desafie-se com Provas Anteriores
-              </Text>
-              <Text style={styles.cardDesc}>
-                Teste seus conhecimentos resolvendo questões reais dos
-                vestibulares anteriores da FATEC. Melhore seu desempenho e
-                esteja preparado para conquistar sua vaga!
               </Text>
               <TouchableOpacity
                 style={styles.cardButton}

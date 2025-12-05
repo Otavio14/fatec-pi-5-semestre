@@ -1,37 +1,46 @@
 import { decodeJwt } from "jose";
 import * as SecureStore from "expo-secure-store";
 import { IPerfil } from "../types/index.type";
+import { Platform } from "react-native";
 
 const TOKEN_KEY = "auth_token";
 
+const isWeb = Platform.OS === "web";
+
+const storage = {
+  setItem: async (key: string, value: string): Promise<void> => {
+    if (isWeb) {
+      localStorage.setItem(key, value);
+    } else {
+      await SecureStore.setItemAsync(key, value);
+    }
+  },
+  getItem: async (key: string): Promise<string | null> => {
+    if (isWeb) {
+      return localStorage.getItem(key);
+    } else {
+      return await SecureStore.getItemAsync(key);
+    }
+  },
+  removeItem: async (key: string): Promise<void> => {
+    if (isWeb) {
+      localStorage.removeItem(key);
+    } else {
+      await SecureStore.deleteItemAsync(key);
+    }
+  },
+};
+
 export const authService = {
   saveToken: async (token: string): Promise<void> => {
-    if (typeof localStorage !== "undefined")
-      localStorage.setItem(TOKEN_KEY, token);
-    else await SecureStore.setItemAsync(TOKEN_KEY, token);
+    await storage.setItem(TOKEN_KEY, token);
   },
   getToken: async (): Promise<string | null> => {
-    if (typeof localStorage !== "undefined")
-      return localStorage.getItem(TOKEN_KEY);
-    else return await SecureStore.getItemAsync(TOKEN_KEY);
+    return await storage.getItem(TOKEN_KEY);
   },
   deleteToken: async (): Promise<void> => {
-    if (typeof localStorage !== "undefined") localStorage.removeItem(TOKEN_KEY);
-    else await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await storage.removeItem(TOKEN_KEY);
   },
-  // getUserInfo: (): any => {
-  //   const token = localStorage.getItem(TOKEN_KEY);
-
-  //   if (!token || token === "") return false;
-
-  //   try {
-  //     const { id, email, nome, perfil } = decodeJwt(token);
-  //     return { id, email, nome, perfil };
-  //   } catch {
-  //     localStorage.removeItem(TOKEN_KEY);
-  //     return false;
-  //   }
-  // },
   isAuthenticated: async (): Promise<boolean> => {
     const token = await authService.getToken();
 
