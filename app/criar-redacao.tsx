@@ -1,28 +1,28 @@
-import { Picker } from "@react-native-picker/picker";
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { Picker } from '@react-native-picker/picker';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import Swal from "sweetalert2";
-import { ProvaService } from "../services/prova.service";
-import { RedacaoReferenciaService } from "../services/redacao-referencia.service";
-import { RedacaoService } from "../services/redacao.service";
-import { ReferenciaService } from "../services/referencia.service";
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { CustomStatusModal } from '../components/CustomStatusModal';
+import { ProvaService } from '../services/prova.service';
+import { RedacaoReferenciaService } from '../services/redacao-referencia.service';
+import { RedacaoService } from '../services/redacao.service';
+import { ReferenciaService } from '../services/referencia.service';
 
-const BLUE = "#4A82F8";
-const ORANGE = "#FFA747";
-const GREY_BG = "#dddddd";
+const BLUE = '#4A82F8';
+const ORANGE = '#FFA747';
+const GREY_BG = '#dddddd';
 
 interface IReferenciaForm {
   titulo: string;
@@ -34,30 +34,41 @@ interface IReferenciaForm {
 
 export default function CriarRedacaoScreen() {
   const [provas, setProvas] = useState<any[]>([]);
-  const [idProvaSelecionada, setIdProvaSelecionada] = useState<number>(0);
-  const [instrucoes, setInstrucoes] = useState<string>("");
-  const [referencia1, setReferencia1] = useState<IReferenciaForm>({
-    titulo: "",
-    legenda: "",
-    texto: "",
-    url_imagem: "",
-    informacao_acesso: "",
-  });
-  const [referencia2, setReferencia2] = useState<IReferenciaForm>({
-    titulo: "",
-    legenda: "",
-    texto: "",
-    url_imagem: "",
-    informacao_acesso: "",
-  });
+  const [idProvaSelecionada, setIdProvaSelecionada] =
+    useState<number>(0);
+  const [instrucoes, setInstrucoes] = useState<string>('');
+  const [referencia1, setReferencia1] =
+    useState<IReferenciaForm>({
+      titulo: '',
+      legenda: '',
+      texto: '',
+      url_imagem: '',
+      informacao_acesso: '',
+    });
+  const [referencia2, setReferencia2] =
+    useState<IReferenciaForm>({
+      titulo: '',
+      legenda: '',
+      texto: '',
+      url_imagem: '',
+      informacao_acesso: '',
+    });
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
+
+  // Estados para o Modal Personalizado
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<
+    'success' | 'error'
+  >('success');
+  const [modalMessage, setModalMessage] = useState('');
 
   const router = useRouter();
   const provaService = new ProvaService();
   const redacaoService = new RedacaoService();
   const referenciaService = new ReferenciaService();
-  const redacaoReferenciaService = new RedacaoReferenciaService();
+  const redacaoReferenciaService =
+    new RedacaoReferenciaService();
 
   useEffect(() => {
     provaService
@@ -70,46 +81,42 @@ export default function CriarRedacaoScreen() {
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Erro ao buscar provas:", err);
+        console.error('Erro ao buscar provas:', err);
         setLoading(false);
       });
   }, []);
 
+  const showModal = (
+    type: 'success' | 'error',
+    message: string,
+  ) => {
+    setModalType(type);
+    setModalMessage(message);
+    setModalVisible(true);
+  };
+
   const handleSalvar = async () => {
     // Validações
     if (!idProvaSelecionada) {
-      Swal.fire({
-        icon: "warning",
-        title: "Atenção",
-        text: "Selecione uma prova.",
-      });
+      showModal('error', 'Selecione uma prova.');
       return;
     }
 
     if (!instrucoes.trim()) {
-      Swal.fire({
-        icon: "warning",
-        title: "Atenção",
-        text: "Preencha o tema da redação (instruções).",
-      });
+      showModal(
+        'error',
+        'Preencha o tema da redação (instruções).',
+      );
       return;
     }
 
     if (!referencia1.texto.trim()) {
-      Swal.fire({
-        icon: "warning",
-        title: "Atenção",
-        text: "Preencha o texto auxiliar 1.",
-      });
+      showModal('error', 'Preencha o texto auxiliar 1.');
       return;
     }
 
     if (!referencia2.texto.trim()) {
-      Swal.fire({
-        icon: "warning",
-        title: "Atenção",
-        text: "Preencha o texto auxiliar 2.",
-      });
+      showModal('error', 'Preencha o texto auxiliar 2.');
       return;
     }
 
@@ -126,22 +133,24 @@ export default function CriarRedacaoScreen() {
 
       // 2. Criar primeira referência
       const ref1Response = await referenciaService.create({
-        titulo: referencia1.titulo || "",
-        legenda: referencia1.legenda || "",
+        titulo: referencia1.titulo || '',
+        legenda: referencia1.legenda || '',
         texto: referencia1.texto,
-        url_imagem: referencia1.url_imagem || "",
-        informacao_acesso: referencia1.informacao_acesso || "",
+        url_imagem: referencia1.url_imagem || '',
+        informacao_acesso:
+          referencia1.informacao_acesso || '',
       });
 
       const idRef1 = ref1Response.data.dados;
 
       // 3. Criar segunda referência
       const ref2Response = await referenciaService.create({
-        titulo: referencia2.titulo || "",
-        legenda: referencia2.legenda || "",
+        titulo: referencia2.titulo || '',
+        legenda: referencia2.legenda || '',
         texto: referencia2.texto,
-        url_imagem: referencia2.url_imagem || "",
-        informacao_acesso: referencia2.informacao_acesso || "",
+        url_imagem: referencia2.url_imagem || '',
+        informacao_acesso:
+          referencia2.informacao_acesso || '',
       });
 
       const idRef2 = ref2Response.data.dados;
@@ -159,35 +168,30 @@ export default function CriarRedacaoScreen() {
         ordem: 2,
       });
 
-      Swal.fire({
-        icon: "success",
-        title: "Sucesso",
-        text: "Redação criada com sucesso!",
-      });
+      showModal('success', 'Redação criada com sucesso!');
 
       // Limpar formulário
-      setInstrucoes("");
+      setInstrucoes('');
       setReferencia1({
-        titulo: "",
-        legenda: "",
-        texto: "",
-        url_imagem: "",
-        informacao_acesso: "",
+        titulo: '',
+        legenda: '',
+        texto: '',
+        url_imagem: '',
+        informacao_acesso: '',
       });
       setReferencia2({
-        titulo: "",
-        legenda: "",
-        texto: "",
-        url_imagem: "",
-        informacao_acesso: "",
+        titulo: '',
+        legenda: '',
+        texto: '',
+        url_imagem: '',
+        informacao_acesso: '',
       });
     } catch (error) {
-      console.error("Erro ao salvar redação:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Erro",
-        text: "Erro ao salvar a redação. Tente novamente.",
-      });
+      console.error('Erro ao salvar redação:', error);
+      showModal(
+        'error',
+        'Erro ao salvar a redação. Tente novamente.',
+      );
     } finally {
       setSalvando(false);
     }
@@ -198,7 +202,9 @@ export default function CriarRedacaoScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={BLUE} />
-          <Text style={styles.loadingText}>Carregando...</Text>
+          <Text style={styles.loadingText}>
+            Carregando...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -206,11 +212,16 @@ export default function CriarRedacaoScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor={GREY_BG} />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={GREY_BG}
+      />
 
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={
+          Platform.OS === 'ios' ? 'padding' : undefined
+        }
       >
         <ScrollView
           contentContainerStyle={styles.scroll}
@@ -220,7 +231,9 @@ export default function CriarRedacaoScreen() {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Text style={styles.backButtonText}>Voltar</Text>
+            <Text style={styles.backButtonText}>
+              Voltar
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.card}>
@@ -248,7 +261,9 @@ export default function CriarRedacaoScreen() {
             </View>
 
             <View style={styles.fieldBlock}>
-              <Text style={styles.label}>Tema da Redação (Instruções)</Text>
+              <Text style={styles.label}>
+                Tema da Redação (Instruções)
+              </Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Digite o tema da redação..."
@@ -261,30 +276,42 @@ export default function CriarRedacaoScreen() {
               />
             </View>
 
-            <Text style={styles.sectionTitle}>Texto Auxiliar 1</Text>
+            <Text style={styles.sectionTitle}>
+              Texto Auxiliar 1
+            </Text>
 
             <View style={styles.fieldBlock}>
-              <Text style={styles.label}>Título (Opcional)</Text>
+              <Text style={styles.label}>
+                Título (Opcional)
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="Título da referência 1..."
                 placeholderTextColor="#999"
                 value={referencia1.titulo}
                 onChangeText={(text) =>
-                  setReferencia1({ ...referencia1, titulo: text })
+                  setReferencia1({
+                    ...referencia1,
+                    titulo: text,
+                  })
                 }
               />
             </View>
 
             <View style={styles.fieldBlock}>
-              <Text style={styles.label}>Legenda (Opcional)</Text>
+              <Text style={styles.label}>
+                Legenda (Opcional)
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="Legenda da referência 1..."
                 placeholderTextColor="#999"
                 value={referencia1.legenda}
                 onChangeText={(text) =>
-                  setReferencia1({ ...referencia1, legenda: text })
+                  setReferencia1({
+                    ...referencia1,
+                    legenda: text,
+                  })
                 }
               />
             </View>
@@ -300,61 +327,86 @@ export default function CriarRedacaoScreen() {
                 textAlignVertical="top"
                 value={referencia1.texto}
                 onChangeText={(text) =>
-                  setReferencia1({ ...referencia1, texto: text })
+                  setReferencia1({
+                    ...referencia1,
+                    texto: text,
+                  })
                 }
               />
             </View>
 
             <View style={styles.fieldBlock}>
-              <Text style={styles.label}>URL da Imagem (Opcional)</Text>
+              <Text style={styles.label}>
+                URL da Imagem (Opcional)
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="https://..."
                 placeholderTextColor="#999"
                 value={referencia1.url_imagem}
                 onChangeText={(text) =>
-                  setReferencia1({ ...referencia1, url_imagem: text })
+                  setReferencia1({
+                    ...referencia1,
+                    url_imagem: text,
+                  })
                 }
               />
             </View>
 
             <View style={styles.fieldBlock}>
-              <Text style={styles.label}>Informação de Acesso (Opcional)</Text>
+              <Text style={styles.label}>
+                Informação de Acesso (Opcional)
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="Fonte, data de acesso..."
                 placeholderTextColor="#999"
                 value={referencia1.informacao_acesso}
                 onChangeText={(text) =>
-                  setReferencia1({ ...referencia1, informacao_acesso: text })
+                  setReferencia1({
+                    ...referencia1,
+                    informacao_acesso: text,
+                  })
                 }
               />
             </View>
 
-            <Text style={styles.sectionTitle}>Texto Auxiliar 2</Text>
+            <Text style={styles.sectionTitle}>
+              Texto Auxiliar 2
+            </Text>
 
             <View style={styles.fieldBlock}>
-              <Text style={styles.label}>Título (Opcional)</Text>
+              <Text style={styles.label}>
+                Título (Opcional)
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="Título da referência 2..."
                 placeholderTextColor="#999"
                 value={referencia2.titulo}
                 onChangeText={(text) =>
-                  setReferencia2({ ...referencia2, titulo: text })
+                  setReferencia2({
+                    ...referencia2,
+                    titulo: text,
+                  })
                 }
               />
             </View>
 
             <View style={styles.fieldBlock}>
-              <Text style={styles.label}>Legenda (Opcional)</Text>
+              <Text style={styles.label}>
+                Legenda (Opcional)
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="Legenda da referência 2..."
                 placeholderTextColor="#999"
                 value={referencia2.legenda}
                 onChangeText={(text) =>
-                  setReferencia2({ ...referencia2, legenda: text })
+                  setReferencia2({
+                    ...referencia2,
+                    legenda: text,
+                  })
                 }
               />
             </View>
@@ -370,51 +422,79 @@ export default function CriarRedacaoScreen() {
                 textAlignVertical="top"
                 value={referencia2.texto}
                 onChangeText={(text) =>
-                  setReferencia2({ ...referencia2, texto: text })
+                  setReferencia2({
+                    ...referencia2,
+                    texto: text,
+                  })
                 }
               />
             </View>
 
             <View style={styles.fieldBlock}>
-              <Text style={styles.label}>URL da Imagem (Opcional)</Text>
+              <Text style={styles.label}>
+                URL da Imagem (Opcional)
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="https://..."
                 placeholderTextColor="#999"
                 value={referencia2.url_imagem}
                 onChangeText={(text) =>
-                  setReferencia2({ ...referencia2, url_imagem: text })
+                  setReferencia2({
+                    ...referencia2,
+                    url_imagem: text,
+                  })
                 }
               />
             </View>
 
             <View style={styles.fieldBlock}>
-              <Text style={styles.label}>Informação de Acesso (Opcional)</Text>
+              <Text style={styles.label}>
+                Informação de Acesso (Opcional)
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="Fonte, data de acesso..."
                 placeholderTextColor="#999"
                 value={referencia2.informacao_acesso}
                 onChangeText={(text) =>
-                  setReferencia2({ ...referencia2, informacao_acesso: text })
+                  setReferencia2({
+                    ...referencia2,
+                    informacao_acesso: text,
+                  })
                 }
               />
             </View>
 
             <TouchableOpacity
-              style={[styles.button, salvando && styles.buttonDisabled]}
+              style={[
+                styles.button,
+                salvando && styles.buttonDisabled,
+              ]}
               onPress={handleSalvar}
               disabled={salvando}
             >
               {salvando ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator
+                  size="small"
+                  color="#fff"
+                />
               ) : (
-                <Text style={styles.buttonText}>Cadastrar Redação</Text>
+                <Text style={styles.buttonText}>
+                  Cadastrar Redação
+                </Text>
               )}
             </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <CustomStatusModal
+        visible={modalVisible}
+        type={modalType}
+        message={modalMessage}
+        onClose={() => setModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -433,39 +513,39 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    fontWeight: "600",
-    color: "#555",
+    fontWeight: '600',
+    color: '#555',
   },
   backButton: {
-    backgroundColor: "#90EE90",
+    backgroundColor: '#90EE90',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
     marginBottom: 20,
   },
   backButtonText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: '600',
+    color: '#333',
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 24,
     elevation: 4,
   },
   title: {
     fontSize: 28,
-    fontWeight: "700",
+    fontWeight: '700',
     color: BLUE,
-    textAlign: "center",
+    textAlign: 'center',
     marginBottom: 24,
   },
   fieldBlock: {
@@ -473,16 +553,16 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: '600',
+    color: '#333',
     marginBottom: 6,
   },
   pickerContainer: {
     borderWidth: 2,
     borderColor: BLUE,
     borderRadius: 8,
-    backgroundColor: "#f7f7f7",
-    overflow: "hidden",
+    backgroundColor: '#f7f7f7',
+    overflow: 'hidden',
   },
   picker: {
     height: 50,
@@ -494,38 +574,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    backgroundColor: "#f7f7f7",
-    color: "#000",
+    backgroundColor: '#f7f7f7',
+    color: '#000',
   },
   textArea: {
     minHeight: 80,
-    textAlignVertical: "top",
+    textAlignVertical: 'top',
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#333",
+    fontWeight: '700',
+    color: '#333',
     marginTop: 20,
     marginBottom: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#ddd",
+    borderTopColor: '#ddd',
   },
   button: {
     backgroundColor: ORANGE,
     borderRadius: 8,
     height: 56,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 24,
     elevation: 3,
   },
   buttonDisabled: {
-    backgroundColor: "#ccc",
+    backgroundColor: '#ccc',
   },
   buttonText: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#fff",
+    fontWeight: '700',
+    color: '#fff',
   },
 });

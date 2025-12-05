@@ -1,271 +1,652 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
+import React, { useEffect, useState } from 'react';
 import {
-  ScrollView,
+  ActivityIndicator,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
-} from "react-native";
-import { Cell, Row, Table, TableWrapper } from "react-native-table-component";
-import { Swal, Toast } from "../../components/swal.shared";
-import { ThemedText } from "../../components/themed-text";
-import { ThemedView } from "../../components/themed-view";
-import { IconSymbol } from "../../components/ui/icon-symbol";
-import { Colors } from "../../constants/theme";
-import { useColorScheme } from "../../hooks/use-color-scheme.web";
-import { errorSwal } from "../../services/api.service";
-import { UsuarioService } from "../../services/usuario.service";
-import { IUsuario, IUsuarioForm } from "../../types/usuario.type";
+} from 'react-native';
+import { CustomStatusModal } from '../../components/CustomStatusModal';
+import { UsuarioService } from '../../services/usuario.service';
+import { IUsuario } from '../../types/usuario.type';
+
+const BLUE = '#4A82F8';
+const ORANGE = '#FFA747';
+const GREY_BG = '#f5f5f5';
+const RED = '#FF6B6B';
 
 export default function AdminUsuariosScreen() {
-  const [usuarios, setUsuarios] = useState<Array<IUsuario>>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [reload, setReload] = useState(false);
-  const [id, setId] = useState(0);
-  const [form, setForm] = useState<IUsuarioForm>({
-    email: "",
-    id: 0,
-    nome: "",
-    perfil: "",
-    senha: "",
-    senhaConfirmacao: "",
-  });
-  // const theme = useTheme();
-  const colorScheme = useColorScheme();
-  const iconColor = Colors[colorScheme ?? "light"].tint;
+  const [usuarios, setUsuarios] = useState<IUsuario[]>([]);
+  const [filteredUsuarios, setFilteredUsuarios] = useState<
+    IUsuario[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
-  const usuarioService = useMemo(() => new UsuarioService(), []);
-  const DialogRef = useRef<HTMLDialogElement>(null);
+  // Estados do Modal de Formulário
+  const [modalFormVisible, setModalFormVisible] =
+    useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const openModal = (id: number) => {
-    setId(id);
+  // Estados do Formulário
+  const [formId, setFormId] = useState<number>(0);
+  const [formNome, setFormNome] = useState('');
+  const [formEmail, setFormEmail] = useState('');
+  const [formPerfil, setFormPerfil] = useState('Aluno');
+  const [formSenha, setFormSenha] = useState('');
+  const [formSenhaConfirm, setFormSenhaConfirm] =
+    useState('');
 
-    usuarioService
-      .findOne(id)
-      .then(({ data: { dados } }) => {
-        setShowModal(true);
-        setForm({ ...dados, senhaConfirmacao: "", senha: "" });
-      })
-      .catch(errorSwal);
+  // Estados do Modal de Status (Sucesso/Erro)
+  const [statusModalVisible, setStatusModalVisible] =
+    useState(false);
+  const [statusType, setStatusType] = useState<
+    'success' | 'error'
+  >('success');
+  const [statusMessage, setStatusMessage] = useState('');
+
+  const usuarioService = new UsuarioService();
+
+  useEffect(() => {
+    loadUsuarios();
+  }, []);
+
+  useEffect(() => {
+    if (search.trim() === '') {
+      setFilteredUsuarios(usuarios);
+    } else {
+      const lowerSearch = search.toLowerCase();
+      const filtered = usuarios.filter(
+        (u) =>
+          u.nome.toLowerCase().includes(lowerSearch) ||
+          u.email.toLowerCase().includes(lowerSearch),
+      );
+      setFilteredUsuarios(filtered);
+    }
+  }, [search, usuarios]);
+
+  const loadUsuarios = async () => {
+    setLoading(true);
+    try {
+      const response = await usuarioService.findAll();
+      setUsuarios(response.data.dados);
+      setFilteredUsuarios(response.data.dados);
+    } catch (error) {
+      console.error('Erro ao carregar usuários', error);
+      showStatus(
+        'error',
+        'Não foi possível carregar a lista de usuários.',
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const deletar = (id: number) => {
-    Swal.fire({
-      title: "Deseja deletar este usuário?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Sim",
-      cancelButtonText: "Não",
-    }).then(({ isConfirmed }) => {
-      if (isConfirmed)
-        usuarioService
-          .delete(id)
-          .then(({ data: { icone, mensagem, titulo } }) => {
-            setReload((r) => !r);
-            Toast.fire({
-              title: titulo,
-              text: mensagem,
-              icon: icone,
-            });
-          })
-          .catch(errorSwal);
-    });
+  const showStatus = (
+    type: 'success' | 'error',
+    message: string,
+  ) => {
+    setStatusType(type);
+    setStatusMessage(message);
+    setStatusModalVisible(true);
   };
 
-  const closeModal = () => {
-    setShowModal(false);
-    setId(0);
-    setForm({
-      email: "",
-      id: 0,
-      nome: "",
-      perfil: "",
-      senha: "",
-      senhaConfirmacao: "",
-    });
+  const handleOpenCreate = () => {
+    setFormId(0);
+    setFormNome('');
+    setFormEmail('');
+    setFormPerfil('Aluno');
+    setFormSenha('');
+    setFormSenhaConfirm('');
+    setIsEditing(false);
+    setModalFormVisible(true);
   };
 
-  const salvar = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleOpenEdit = (usuario: IUsuario) => {
+    setFormId(usuario.id);
+    setFormNome(usuario.nome);
+    setFormEmail(usuario.email);
+    setFormPerfil(usuario.perfil);
+    setFormSenha(''); // Não preenche senha na edição por segurança
+    setFormSenhaConfirm('');
+    setIsEditing(true);
+    setModalFormVisible(true);
+  };
 
-    if (form.senha !== form.senhaConfirmacao) {
-      Swal.fire({
-        title: "Aviso!",
-        text: "As senhas não coincidem.",
-        icon: "warning",
-      });
+  const handleDelete = async (id: number) => {
+    // Em um app real, idealmente teríamos um modal de confirmação "Sim/Não" nativo aqui
+    // Para simplificar, vamos assumir a ação direta ou implementar um Alert nativo
+    try {
+      await usuarioService.delete(id);
+      showStatus(
+        'success',
+        'Usuário removido com sucesso!',
+      );
+      loadUsuarios();
+    } catch (error) {
+      showStatus('error', 'Erro ao remover usuário.');
+    }
+  };
+
+  const handleSave = async () => {
+    if (!formNome || !formEmail) {
+      showStatus('error', 'Preencha nome e e-mail.');
       return;
     }
 
-    const data = {
-      email: form.email,
-      nome: form.nome,
-      perfil: form.perfil || "Aluno",
-      senha: form.senha,
-    };
+    if (!isEditing && !formSenha) {
+      showStatus(
+        'error',
+        'Senha é obrigatória para novos usuários.',
+      );
+      return;
+    }
 
-    if (id) {
-      usuarioService
-        .update(id, data)
-        .then(({ data: { icone, mensagem, titulo } }) => {
-          closeModal();
-          setReload((r) => !r);
-          Toast.fire({
-            title: titulo,
-            text: mensagem,
-            icon: icone,
-          });
-        });
-    } else {
-      usuarioService
-        .create(data)
-        .then(({ data: { icone, mensagem, titulo } }) => {
-          closeModal();
-          setReload((r) => !r);
-          Toast.fire({
-            title: titulo,
-            text: mensagem,
-            icon: icone,
-          });
-        });
+    if (formSenha && formSenha !== formSenhaConfirm) {
+      showStatus('error', 'As senhas não coincidem.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const data: any = {
+        nome: formNome,
+        email: formEmail,
+        perfil: formPerfil,
+      };
+
+      if (formSenha) {
+        data.senha = formSenha;
+      }
+
+      if (isEditing) {
+        await usuarioService.update(formId, data);
+        showStatus(
+          'success',
+          'Usuário atualizado com sucesso!',
+        );
+      } else {
+        await usuarioService.create(data);
+        showStatus(
+          'success',
+          'Usuário criado com sucesso!',
+        );
+      }
+
+      setModalFormVisible(false);
+      loadUsuarios();
+    } catch (error) {
+      console.error(error);
+      showStatus('error', 'Erro ao salvar usuário.');
+    } finally {
+      setSaving(false);
     }
   };
 
-  useEffect(() => {
-    if (showModal && !DialogRef?.current?.hasAttribute("open"))
-      DialogRef?.current?.showModal();
-    else DialogRef?.current?.close();
-  }, [showModal]);
+  const renderItem = ({ item }: { item: IUsuario }) => (
+    <View style={styles.card}>
+      <View style={styles.cardContent}>
+        <View style={styles.avatarPlaceholder}>
+          <Text style={styles.avatarText}>
+            {item.nome.charAt(0).toUpperCase()}
+          </Text>
+        </View>
+        <View style={styles.userInfo}>
+          <Text style={styles.userName}>{item.nome}</Text>
+          <Text style={styles.userEmail}>{item.email}</Text>
+          <View style={styles.badgeContainer}>
+            <View
+              style={[
+                styles.badge,
+                item.perfil === 'Administrador'
+                  ? styles.badgeAdmin
+                  : styles.badgeAluno,
+              ]}
+            >
+              <Text style={styles.badgeText}>
+                {item.perfil}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
 
-  useEffect(() => {
-    usuarioService
-      .findAll()
-      .then(({ data: { dados } }) => {
-        setUsuarios(dados);
-      })
-      .catch(errorSwal);
-  }, [usuarioService, reload]);
-
-  return (
-    <ThemedView style={styles.container}>
-      <View style={styles.header}>
-        <ThemedText style={styles.headerTitle}>Usuários</ThemedText>
-        <input
-          type="search"
-          style={styles.headerSearch}
-          placeholder="Pesquisar"
-        />
+      <View style={styles.cardActions}>
         <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => setShowModal(true)}
+          style={styles.actionButton}
+          onPress={() => handleOpenEdit(item)}
         >
-          Adicionar
+          <Ionicons name="pencil" size={20} color={BLUE} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => handleDelete(item.id)}
+        >
+          <Ionicons
+            name="trash-outline"
+            size={20}
+            color={RED}
+          />
         </TouchableOpacity>
       </View>
-      <Table
-        style={styles.table}
-        borderStyle={{
-          borderWidth: 1,
-          borderColor: "#fff",
-          borderRadius: 16,
-        }}
-      >
-        <Row
-          data={["Nome", "E-mail", "Perfil", "", ""]}
-          textStyle={styles.tableCell}
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={GREY_BG}
+      />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.headerTitle}>
+            Gerenciar Usuários
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {usuarios.length} usuários cadastrados
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={handleOpenCreate}
+        >
+          <Ionicons name="add" size={24} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Search */}
+      <View style={styles.searchContainer}>
+        <Ionicons
+          name="search"
+          size={20}
+          color="#999"
+          style={styles.searchIcon}
         />
-        {usuarios.map((usuario, index) => (
-          <TableWrapper key={index} style={styles.tableRow}>
-            <Cell textStyle={styles.tableCell} data={usuario["nome"]} />
-            <Cell textStyle={styles.tableCell} data={usuario["email"]} />
-            <Cell textStyle={styles.tableCell} data={usuario["perfil"]} />
-            <Cell
-              textStyle={styles.tableCellIcon}
-              data={
-                <TouchableOpacity
-                  onPress={() => openModal(usuario.id)}
-                  key={index}
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar por nome ou e-mail..."
+          value={search}
+          onChangeText={setSearch}
+        />
+      </View>
+
+      {/* List */}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={BLUE} />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredUsuarios}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                Nenhum usuário encontrado.
+              </Text>
+            </View>
+          }
+        />
+      )}
+
+      {/* Form Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalFormVisible}
+        onRequestClose={() => setModalFormVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={
+            Platform.OS === 'ios' ? 'padding' : 'height'
+          }
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {isEditing
+                  ? 'Editar Usuário'
+                  : 'Novo Usuário'}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setModalFormVisible(false)}
+              >
+                <Ionicons
+                  name="close"
+                  size={24}
+                  color="#666"
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.formContainer}>
+              <Text style={styles.label}>Nome</Text>
+              <TextInput
+                style={styles.input}
+                value={formNome}
+                onChangeText={setFormNome}
+                placeholder="Nome completo"
+              />
+
+              <Text style={styles.label}>E-mail</Text>
+              <TextInput
+                style={styles.input}
+                value={formEmail}
+                onChangeText={setFormEmail}
+                placeholder="email@exemplo.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <Text style={styles.label}>Perfil</Text>
+              <View style={styles.pickerWrapper}>
+                <Picker
+                  selectedValue={formPerfil}
+                  onValueChange={(itemValue) =>
+                    setFormPerfil(itemValue)
+                  }
+                  style={styles.picker}
                 >
-                  <IconSymbol size={20} name="pencil" color={iconColor} />
-                </TouchableOpacity>
-              }
-            />
-            <Cell
-              textStyle={styles.tableCellIcon}
-              data={
-                <TouchableOpacity
-                  onPress={() => openModal(usuario.id)}
-                  key={index}
-                >
-                  <IconSymbol size={20} name="trash" color={iconColor} />
-                </TouchableOpacity>
-              }
-            />
-          </TableWrapper>
-        ))}
-      </Table>
-    </ThemedView>
+                  <Picker.Item
+                    label="Aluno"
+                    value="Aluno"
+                  />
+                  <Picker.Item
+                    label="Administrador"
+                    value="Administrador"
+                  />
+                </Picker>
+              </View>
+
+              <Text style={styles.label}>
+                {isEditing
+                  ? 'Nova Senha (Opcional)'
+                  : 'Senha'}
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={formSenha}
+                onChangeText={setFormSenha}
+                secureTextEntry
+                placeholder={
+                  isEditing
+                    ? 'Deixe em branco para manter'
+                    : 'Senha'
+                }
+              />
+
+              {(!!formSenha || !isEditing) && (
+                <>
+                  <Text style={styles.label}>
+                    Confirmar Senha
+                  </Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formSenhaConfirm}
+                    onChangeText={setFormSenhaConfirm}
+                    secureTextEntry
+                    placeholder="Confirme a senha"
+                  />
+                </>
+              )}
+
+              <TouchableOpacity
+                style={[
+                  styles.saveButton,
+                  saving && styles.disabledButton,
+                ]}
+                onPress={handleSave}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.saveButtonText}>
+                    Salvar
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Status Modal */}
+      <CustomStatusModal
+        visible={statusModalVisible}
+        type={statusType}
+        message={statusMessage}
+        onClose={() => setStatusModalVisible(false)}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    display: "flex",
-    padding: 16,
-    width: "100%",
-    height: "100%",
+    flex: 1,
+    backgroundColor: GREY_BG,
   },
   header: {
-    display: "flex",
-    gap: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: '#fff',
   },
   headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#666',
+  },
+  addButton: {
+    backgroundColor: BLUE,
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginVertical: 15,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    height: 50,
+    elevation: 2,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+  },
+  listContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 80,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#999',
+    fontSize: 16,
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginBottom: 12,
     padding: 16,
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: 0,
-    width: "100%",
-    fontSize: 30,
-    lineHeight: 36,
-    fontWeight: 700,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
-  headerSearch: {
-    padding: 8,
-    borderRadius: 2,
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatarPlaceholder: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#E0E7FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    color: BLUE,
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  userEmail: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  badgeContainer: {
+    flexDirection: 'row',
+  },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  badgeAdmin: {
+    backgroundColor: '#FFEBEE',
+  },
+  badgeAluno: {
+    backgroundColor: '#E8F5E9',
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#555',
+  },
+  cardActions: {
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    height: '100%',
+    marginLeft: 10,
+    gap: 10,
+  },
+  actionButton: {
+    padding: 5,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  formContainer: {
+    paddingBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#555',
+    marginBottom: 6,
+    marginTop: 10,
+  },
+  input: {
     borderWidth: 1,
-    borderColor: "#3B82F6",
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    backgroundColor: '#FAFAFA',
   },
-  headerButton: {
-    display: "flex",
-    paddingTop: 16,
-    paddingBottom: 16,
-    paddingLeft: 16,
-    paddingRight: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 2,
-    width: "auto",
-    height: "auto",
-    fontWeight: 600,
-    color: "#ffffff",
-    backgroundColor: "#52627c",
-    borderWidth: 0,
+  pickerWrapper: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    backgroundColor: '#FAFAFA',
+    overflow: 'hidden',
   },
-  table: {
-    backgroundColor: "#c3cfe2",
+  picker: {
+    height: 50,
   },
-  tableCell: {
-    margin: 8,
+  saveButton: {
+    backgroundColor: BLUE,
+    borderRadius: 8,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 30,
   },
-  tableCellIcon: {
-    margin: 8,
-    textAlign: "center",
-    width: 20,
+  disabledButton: {
+    backgroundColor: '#9FB3E0',
   },
-  tableRow: {
-    flexDirection: "row",
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

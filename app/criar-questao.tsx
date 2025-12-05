@@ -1,27 +1,27 @@
-import { Picker } from "@react-native-picker/picker";
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { Picker } from '@react-native-picker/picker';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import Swal from "sweetalert2";
-import { AlternativaService } from "../services/alternativa.service";
-import { ProvaService } from "../services/prova.service";
-import { QuestaoService } from "../services/questao.service";
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { CustomStatusModal } from '../components/CustomStatusModal';
+import { AlternativaService } from '../services/alternativa.service';
+import { ProvaService } from '../services/prova.service';
+import { QuestaoService } from '../services/questao.service';
 
-const BLUE = "#4A82F8";
-const ORANGE = "#FFA747";
-const GREY_BG = "#dddddd";
+const BLUE = '#4A82F8';
+const ORANGE = '#FFA747';
+const GREY_BG = '#dddddd';
 
 interface IAlternativaForm {
   nome: string;
@@ -31,18 +31,30 @@ interface IAlternativaForm {
 
 export default function CriarQuestaoScreen() {
   const [provas, setProvas] = useState<any[]>([]);
-  const [idProvaSelecionada, setIdProvaSelecionada] = useState<number>(0);
-  const [numeroQuestao, setNumeroQuestao] = useState<string>("");
-  const [textoQuestao, setTextoQuestao] = useState<string>("");
-  const [alternativas, setAlternativas] = useState<IAlternativaForm[]>([
-    { nome: "A", texto: "", correta: false },
-    { nome: "B", texto: "", correta: false },
-    { nome: "C", texto: "", correta: false },
-    { nome: "D", texto: "", correta: false },
-    { nome: "E", texto: "", correta: false },
+  const [idProvaSelecionada, setIdProvaSelecionada] =
+    useState<number>(0);
+  const [numeroQuestao, setNumeroQuestao] =
+    useState<string>('');
+  const [textoQuestao, setTextoQuestao] =
+    useState<string>('');
+  const [alternativas, setAlternativas] = useState<
+    IAlternativaForm[]
+  >([
+    { nome: 'A', texto: '', correta: false },
+    { nome: 'B', texto: '', correta: false },
+    { nome: 'C', texto: '', correta: false },
+    { nome: 'D', texto: '', correta: false },
+    { nome: 'E', texto: '', correta: false },
   ]);
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
+
+  // Estados para o Modal Personalizado
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<
+    'success' | 'error'
+  >('success');
+  const [modalMessage, setModalMessage] = useState('');
 
   const router = useRouter();
   const provaService = new ProvaService();
@@ -60,65 +72,76 @@ export default function CriarQuestaoScreen() {
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Erro ao buscar provas:", err);
+        console.error('Erro ao buscar provas:', err);
         setLoading(false);
       });
   }, []);
 
-  const handleAlternativaChange = (index: number, texto: string) => {
+  const handleAlternativaChange = (
+    index: number,
+    texto: string,
+  ) => {
     const novasAlternativas = [...alternativas];
     novasAlternativas[index].texto = texto;
     setAlternativas(novasAlternativas);
   };
 
-  const handleAlternativaCorretaChange = (index: number) => {
-    const novasAlternativas = alternativas.map((alt, i) => ({
-      ...alt,
-      correta: i === index,
-    }));
+  const handleAlternativaCorretaChange = (
+    index: number,
+  ) => {
+    const novasAlternativas = alternativas.map(
+      (alt, i) => ({
+        ...alt,
+        correta: i === index,
+      }),
+    );
     setAlternativas(novasAlternativas);
+  };
+
+  const showModal = (
+    type: 'success' | 'error',
+    message: string,
+  ) => {
+    setModalType(type);
+    setModalMessage(message);
+    setModalVisible(true);
   };
 
   const handleSalvar = async () => {
     // Validações
     if (!idProvaSelecionada) {
-      Swal.fire({
-        icon: "warning",
-        title: "Atenção",
-        text: "Selecione uma prova.",
-      });
+      showModal('error', 'Selecione uma prova.');
       return;
     }
 
     if (!numeroQuestao || !textoQuestao) {
-      Swal.fire({
-        icon: "warning",
-        title: "Atenção",
-        text: "Preencha o número e o texto da questão.",
-      });
+      showModal(
+        'error',
+        'Preencha o número e o texto da questão.',
+      );
       return;
     }
 
     const alternativasPreenchidas = alternativas.filter(
-      (alt) => alt.texto.trim() !== "",
+      (alt) => alt.texto.trim() !== '',
     );
 
     if (alternativasPreenchidas.length < 2) {
-      Swal.fire({
-        icon: "warning",
-        title: "Atenção",
-        text: "Preencha pelo menos 2 alternativas.",
-      });
+      showModal(
+        'error',
+        'Preencha pelo menos 2 alternativas.',
+      );
       return;
     }
 
-    const temCorreta = alternativas.some((alt) => alt.correta);
+    const temCorreta = alternativas.some(
+      (alt) => alt.correta,
+    );
     if (!temCorreta) {
-      Swal.fire({
-        icon: "warning",
-        title: "Atenção",
-        text: "Selecione qual alternativa é a correta.",
-      });
+      showModal(
+        'error',
+        'Selecione qual alternativa é a correta.',
+      );
       return;
     }
 
@@ -135,40 +158,36 @@ export default function CriarQuestaoScreen() {
       const idQuestao = questaoResponse.data.dados;
 
       // Criar as alternativas
-      const alternativasPromises = alternativasPreenchidas.map((alt) =>
-        alternativaService.create({
-          id_questao: idQuestao,
-          nome: alt.nome,
-          texto: alt.texto,
-          correta: alt.correta,
-        }),
-      );
+      const alternativasPromises =
+        alternativasPreenchidas.map((alt) =>
+          alternativaService.create({
+            id_questao: idQuestao,
+            nome: alt.nome,
+            texto: alt.texto,
+            correta: alt.correta,
+          }),
+        );
 
       await Promise.all(alternativasPromises);
 
-      Swal.fire({
-        icon: "success",
-        title: "Sucesso",
-        text: "Questão criada com sucesso!",
-      });
+      showModal('success', 'Questão criada com sucesso!');
 
       // Limpar formulário
-      setNumeroQuestao("");
-      setTextoQuestao("");
+      setNumeroQuestao('');
+      setTextoQuestao('');
       setAlternativas([
-        { nome: "A", texto: "", correta: false },
-        { nome: "B", texto: "", correta: false },
-        { nome: "C", texto: "", correta: false },
-        { nome: "D", texto: "", correta: false },
-        { nome: "E", texto: "", correta: false },
+        { nome: 'A', texto: '', correta: false },
+        { nome: 'B', texto: '', correta: false },
+        { nome: 'C', texto: '', correta: false },
+        { nome: 'D', texto: '', correta: false },
+        { nome: 'E', texto: '', correta: false },
       ]);
     } catch (error) {
-      console.error("Erro ao salvar questão:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Erro",
-        text: "Erro ao salvar a questão. Tente novamente.",
-      });
+      console.error('Erro ao salvar questão:', error);
+      showModal(
+        'error',
+        'Erro ao salvar a questão. Tente novamente.',
+      );
     } finally {
       setSalvando(false);
     }
@@ -179,7 +198,9 @@ export default function CriarQuestaoScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={BLUE} />
-          <Text style={styles.loadingText}>Carregando...</Text>
+          <Text style={styles.loadingText}>
+            Carregando...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -187,11 +208,16 @@ export default function CriarQuestaoScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor={GREY_BG} />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={GREY_BG}
+      />
 
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={
+          Platform.OS === 'ios' ? 'padding' : undefined
+        }
       >
         <ScrollView
           contentContainerStyle={styles.scroll}
@@ -201,7 +227,9 @@ export default function CriarQuestaoScreen() {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Text style={styles.backButtonText}>Voltar</Text>
+            <Text style={styles.backButtonText}>
+              Voltar
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.card}>
@@ -229,7 +257,9 @@ export default function CriarQuestaoScreen() {
             </View>
 
             <View style={styles.fieldBlock}>
-              <Text style={styles.label}>Número da Questão</Text>
+              <Text style={styles.label}>
+                Número da Questão
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="Ex: 1"
@@ -241,7 +271,9 @@ export default function CriarQuestaoScreen() {
             </View>
 
             <View style={styles.fieldBlock}>
-              <Text style={styles.label}>Texto da Questão</Text>
+              <Text style={styles.label}>
+                Texto da Questão
+              </Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Digite o enunciado da questão..."
@@ -254,10 +286,15 @@ export default function CriarQuestaoScreen() {
               />
             </View>
 
-            <Text style={styles.sectionTitle}>Alternativas</Text>
+            <Text style={styles.sectionTitle}>
+              Alternativas
+            </Text>
 
             {alternativas.map((alternativa, index) => (
-              <View key={index} style={styles.alternativaBlock}>
+              <View
+                key={index}
+                style={styles.alternativaBlock}
+              >
                 <View style={styles.alternativaHeader}>
                   <Text style={styles.alternativaLabel}>
                     ({alternativa.nome})
@@ -265,40 +302,64 @@ export default function CriarQuestaoScreen() {
                   <TouchableOpacity
                     style={[
                       styles.radioButton,
-                      alternativa.correta && styles.radioButtonSelected,
+                      alternativa.correta &&
+                        styles.radioButtonSelected,
                     ]}
-                    onPress={() => handleAlternativaCorretaChange(index)}
+                    onPress={() =>
+                      handleAlternativaCorretaChange(index)
+                    }
                   >
                     {alternativa.correta && (
-                      <View style={styles.radioButtonInner} />
+                      <View
+                        style={styles.radioButtonInner}
+                      />
                     )}
                   </TouchableOpacity>
-                  <Text style={styles.corretaLabel}>Correta</Text>
+                  <Text style={styles.corretaLabel}>
+                    Correta
+                  </Text>
                 </View>
                 <TextInput
                   style={styles.input}
                   placeholder={`Digite a alternativa ${alternativa.nome}...`}
                   placeholderTextColor="#999"
                   value={alternativa.texto}
-                  onChangeText={(text) => handleAlternativaChange(index, text)}
+                  onChangeText={(text) =>
+                    handleAlternativaChange(index, text)
+                  }
                 />
               </View>
             ))}
 
             <TouchableOpacity
-              style={[styles.button, salvando && styles.buttonDisabled]}
+              style={[
+                styles.button,
+                salvando && styles.buttonDisabled,
+              ]}
               onPress={handleSalvar}
               disabled={salvando}
             >
               {salvando ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator
+                  size="small"
+                  color="#fff"
+                />
               ) : (
-                <Text style={styles.buttonText}>Salvar Questão</Text>
+                <Text style={styles.buttonText}>
+                  Salvar Questão
+                </Text>
               )}
             </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <CustomStatusModal
+        visible={modalVisible}
+        type={modalType}
+        message={modalMessage}
+        onClose={() => setModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -317,39 +378,39 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    fontWeight: "600",
-    color: "#555",
+    fontWeight: '600',
+    color: '#555',
   },
   backButton: {
-    backgroundColor: "#90EE90",
+    backgroundColor: '#90EE90',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
     marginBottom: 20,
   },
   backButtonText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: '600',
+    color: '#333',
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 24,
     elevation: 4,
   },
   title: {
     fontSize: 28,
-    fontWeight: "700",
+    fontWeight: '700',
     color: BLUE,
-    textAlign: "center",
+    textAlign: 'center',
     marginBottom: 24,
   },
   fieldBlock: {
@@ -357,16 +418,16 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: '600',
+    color: '#333',
     marginBottom: 8,
   },
   pickerContainer: {
     borderWidth: 2,
     borderColor: BLUE,
     borderRadius: 8,
-    backgroundColor: "#f7f7f7",
-    overflow: "hidden",
+    backgroundColor: '#f7f7f7',
+    overflow: 'hidden',
   },
   picker: {
     height: 50,
@@ -378,17 +439,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    backgroundColor: "#f7f7f7",
-    color: "#000",
+    backgroundColor: '#f7f7f7',
+    color: '#000',
   },
   textArea: {
     minHeight: 100,
-    textAlignVertical: "top",
+    textAlignVertical: 'top',
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: "700",
-    color: "#333",
+    fontWeight: '700',
+    color: '#333',
     marginTop: 12,
     marginBottom: 16,
   },
@@ -396,14 +457,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   alternativaHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 8,
   },
   alternativaLabel: {
     fontSize: 16,
-    fontWeight: "700",
-    color: "#333",
+    fontWeight: '700',
+    color: '#333',
     marginRight: 12,
   },
   radioButton: {
@@ -413,8 +474,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: BLUE,
     marginRight: 8,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   radioButtonSelected: {
     borderColor: BLUE,
@@ -427,23 +488,23 @@ const styles = StyleSheet.create({
   },
   corretaLabel: {
     fontSize: 14,
-    color: "#666",
+    color: '#666',
   },
   button: {
     backgroundColor: ORANGE,
     borderRadius: 8,
     height: 56,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 24,
     elevation: 3,
   },
   buttonDisabled: {
-    backgroundColor: "#ccc",
+    backgroundColor: '#ccc',
   },
   buttonText: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#fff",
+    fontWeight: '700',
+    color: '#fff',
   },
 });
