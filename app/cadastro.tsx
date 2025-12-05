@@ -1,4 +1,5 @@
 import {
+  Alert,
   GestureResponderEvent,
   KeyboardAvoidingView,
   Platform,
@@ -11,12 +12,10 @@ import {
   View,
 } from "react-native";
 
-import { useState } from "react";
-import { UsuarioService } from "../services/usuario.service";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { authService } from "../services/auth.service";
-import Swal from "sweetalert2";
-import { useThemeColor } from "../hooks/use-theme-color";
+import { UsuarioService } from "../services/usuario.service";
 
 interface IRegisterForm {
   email: string;
@@ -36,33 +35,56 @@ export default function CadastroScreen() {
   const router = useRouter();
   const usuarioService = new UsuarioService();
 
-  const handleRegister = (e: GestureResponderEvent) => {
+  const handleRegister = async (e: GestureResponderEvent) => {
     e.preventDefault();
 
-    if (registerForm.senha !== registerForm.senhaConfirmacao) {
-      Swal.fire({
-        icon: "warning",
-        title: "Senhas não coincidem",
-        text: "As senhas informadas não coincidem. Por favor, verifique e tente novamente.",
+    try {
+      if (
+        !registerForm.email ||
+        !registerForm.senha ||
+        !registerForm.nome ||
+        !registerForm.senhaConfirmacao
+      ) {
+        Alert.alert(
+          "Atenção",
+          "Por favor, preencha todos os campos do formulário.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      if (registerForm.senha !== registerForm.senhaConfirmacao) {
+        Alert.alert(
+          "Senhas não coincidem",
+          "As senhas informadas não coincidem. Por favor, verifique e tente novamente.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      await usuarioService.create(registerForm);
+
+      const {
+        data: { dados },
+      } = await usuarioService.login({
+        email: registerForm.email,
+        senha: registerForm.senha,
       });
-      return;
+
+      await authService.saveToken(dados);
+
+      if (await authService.isAuthenticatedAdmin()) {
+        router.push("/admin");
+      } else if (await authService.isAuthenticated()) {
+        router.push("/aluno");
+      }
+    } catch {
+      Alert.alert(
+        "Erro de Cadastro",
+        "Não foi possível realizar o cadastro. Por favor, verifique suas informações e tente novamente.",
+        [{ text: "OK" }]
+      );
     }
-
-    usuarioService.create(registerForm).then(() => {
-      usuarioService
-        .login({ email: registerForm.email, senha: registerForm.senha })
-        .then(async ({ data: { dados } }) => {
-          localStorage.setItem("token", dados);
-
-          if (await authService.isAuthenticatedAdmin()) {
-            router.push("/admin");
-          } else if (await authService.isAuthenticated()) {
-            router.push("/aluno");
-          }
-        });
-      // .catch(errorSwal);
-    });
-    // .catch(errorSwal);
   };
 
   const handleNavigateLogin = () => {

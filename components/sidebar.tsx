@@ -59,13 +59,8 @@ export function Sidebar({
   ];
 
   useEffect(() => {
-    async function fetchData() {
-      setIsAuthenticatedAdmin(await authService.isAuthenticatedAdmin());
-      setIsAuthenticated(await authService.isAuthenticated());
-    }
-
-    fetchData();
-  }, []);
+    verificarAutenticacao();
+  }, [isSidebarOpen]);
 
   useEffect(() => {
     Animated.timing(translateX, {
@@ -74,6 +69,17 @@ export function Sidebar({
       useNativeDriver: true,
     }).start();
   }, [isSidebarOpen, translateX]);
+
+  const verificarAutenticacao = async () => {
+    setIsAuthenticatedAdmin(await authService.isAuthenticatedAdmin());
+    setIsAuthenticated(await authService.isAuthenticated());
+  };
+
+  const handleLogout = () => {
+    authService.deleteToken();
+    setIsSidebarOpen(false);
+    router.push("/login");
+  };
 
   return (
     <>
@@ -87,49 +93,63 @@ export function Sidebar({
           },
         ]}
       >
-        {isAuthenticatedAdmin ? (
-          <Fragment>
-            {rotasAdmin.map((m, i) => (
-              <TouchableOpacity
-                key={i}
-                onPress={() => {
-                  setIsSidebarOpen(false);
-                  router.push(m.rota);
-                }}
-              >
-                <Text style={styles.text}>{m.nome}</Text>
-              </TouchableOpacity>
-            ))}
-          </Fragment>
-        ) : isAuthenticated ? (
-          <Fragment>
-            {rotasAluno.map((m, i) => (
-              <TouchableOpacity
-                key={i}
-                onPress={() => {
-                  setIsSidebarOpen(false);
-                  router.push(m.rota);
-                }}
-              >
-                <Text style={styles.text}>{m.nome}</Text>
-              </TouchableOpacity>
-            ))}
-          </Fragment>
-        ) : (
-          <Fragment>
-            {rotasPublicas.map((m, i) => (
-              <TouchableOpacity
-                key={i}
-                onPress={() => {
-                  setIsSidebarOpen(false);
-                  router.push(m.rota);
-                }}
-              >
-                <Text style={styles.text}>{m.nome}</Text>
-              </TouchableOpacity>
-            ))}
-          </Fragment>
-        )}
+        <View
+          style={[
+            styles.rotas,
+            {
+              maxHeight: Dimensions.get("window").height - 60 - insets.top,
+            },
+          ]}
+        >
+          {isAuthenticatedAdmin ? (
+            <Fragment>
+              {rotasAdmin.map((m, i) => (
+                <TouchableOpacity
+                  key={i}
+                  onPress={() => {
+                    setIsSidebarOpen(false);
+                    router.push(m.rota);
+                  }}
+                >
+                  <Text style={styles.text}>{m.nome}</Text>
+                </TouchableOpacity>
+              ))}
+            </Fragment>
+          ) : isAuthenticated ? (
+            <Fragment>
+              {rotasAluno.map((m, i) => (
+                <TouchableOpacity
+                  key={i}
+                  onPress={() => {
+                    setIsSidebarOpen(false);
+                    router.push(m.rota);
+                  }}
+                >
+                  <Text style={styles.text}>{m.nome}</Text>
+                </TouchableOpacity>
+              ))}
+            </Fragment>
+          ) : (
+            <Fragment>
+              {rotasPublicas.map((m, i) => (
+                <TouchableOpacity
+                  key={i}
+                  onPress={() => {
+                    setIsSidebarOpen(false);
+                    router.push(m.rota);
+                  }}
+                >
+                  <Text style={styles.text}>{m.nome}</Text>
+                </TouchableOpacity>
+              ))}
+            </Fragment>
+          )}
+        </View>
+        {isAuthenticated || isAuthenticatedAdmin ? (
+          <TouchableOpacity onPress={handleLogout} accessibilityRole="button">
+            <Text style={styles.buttonSair}>Sair</Text>
+          </TouchableOpacity>
+        ) : null}
       </Animated.View>
       {isSidebarOpen ? (
         <Pressable
@@ -155,18 +175,23 @@ export function Sidebar({
 const styles = StyleSheet.create({
   sidebar: {
     position: "absolute",
-    top: 60,
     left: 0,
     right: 0,
     width: 300,
-    height: Dimensions.get("window").height - 60,
-    paddingHorizontal: 25,
-    justifyContent: "center",
     zIndex: 1000,
     boxShadow: "2px 4px 3.84px rgba(0, 0, 0, 0.25)",
     elevation: 5,
     backgroundColor: "#F3F3F3",
+    display: "flex",
+    paddingVertical: 30,
+  },
+  rotas: {
+    display: "flex",
     gap: 16,
+    paddingHorizontal: 25,
+    justifyContent: "center",
+    width: "100%",
+    flex: 1,
   },
   text: {
     fontSize: 16,
@@ -178,8 +203,19 @@ const styles = StyleSheet.create({
     top: 60,
     left: 0,
     width: Dimensions.get("window").width,
-    height: Dimensions.get("window").height - 60,
     overflow: "hidden",
     backgroundColor: "transparent",
+  },
+  buttonSair: {
+    borderRadius: 4,
+    width: 100,
+    alignSelf: "center",
+    lineHeight: 20,
+    marginTop: 20,
+    fontWeight: "600",
+    color: "#ffffff",
+    backgroundColor: "#dd3842",
+    paddingVertical: 15,
+    paddingHorizontal: 34,
   },
 });

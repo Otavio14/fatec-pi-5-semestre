@@ -11,6 +11,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { authService } from "../services/auth.service";
@@ -33,6 +34,15 @@ export default function LoginScreen() {
   const handleLogin = async (e: GestureResponderEvent) => {
     e.preventDefault();
     try {
+      if (!loginForm.email || !loginForm.senha) {
+        Alert.alert(
+          "Atenção",
+          "Por favor, preencha todos os campos do formulário.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
       const {
         data: { dados },
       } = await usuarioService.login(loginForm);
@@ -42,9 +52,12 @@ export default function LoginScreen() {
       } else if (await authService.isAuthenticated()) {
         router.push("/aluno");
       }
-      console.log(dados);
-    } catch (error) {
-      console.log(error);
+    } catch {
+      Alert.alert(
+        "Erro de Login",
+        "Não foi possível realizar o login. Por favor, verifique suas credenciais e tente novamente.",
+        [{ text: "OK" }]
+      );
     }
   };
 
@@ -56,9 +69,7 @@ export default function LoginScreen() {
         } else if (await authService.isAuthenticated()) {
           router.push("/aluno");
         }
-      } catch (error) {
-        console.log(error);
-      }
+      } catch {}
     }
     fetchData();
   }, [router]);

@@ -2,19 +2,19 @@ import { Picker } from "@react-native-picker/picker";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Swal from "sweetalert2";
 import { AlternativaService } from "../services/alternativa.service";
 import { ProvaService } from "../services/prova.service";
 import { QuestaoService } from "../services/questao.service";
@@ -82,43 +82,27 @@ export default function CriarQuestaoScreen() {
   const handleSalvar = async () => {
     // Validações
     if (!idProvaSelecionada) {
-      Swal.fire({
-        icon: "warning",
-        title: "Atenção",
-        text: "Selecione uma prova.",
-      });
+      Alert.alert("Atenção", "Selecione uma prova.");
       return;
     }
 
     if (!numeroQuestao || !textoQuestao) {
-      Swal.fire({
-        icon: "warning",
-        title: "Atenção",
-        text: "Preencha o número e o texto da questão.",
-      });
+      Alert.alert("Atenção", "Preencha o número e o texto da questão.");
       return;
     }
 
     const alternativasPreenchidas = alternativas.filter(
-      (alt) => alt.texto.trim() !== "",
+      (alt) => alt.texto.trim() !== ""
     );
 
     if (alternativasPreenchidas.length < 2) {
-      Swal.fire({
-        icon: "warning",
-        title: "Atenção",
-        text: "Preencha pelo menos 2 alternativas.",
-      });
+      Alert.alert("Atenção", "Preencha pelo menos 2 alternativas.");
       return;
     }
 
     const temCorreta = alternativas.some((alt) => alt.correta);
     if (!temCorreta) {
-      Swal.fire({
-        icon: "warning",
-        title: "Atenção",
-        text: "Selecione qual alternativa é a correta.",
-      });
+      Alert.alert("Atenção", "Selecione qual alternativa é a correta.");
       return;
     }
 
@@ -141,16 +125,12 @@ export default function CriarQuestaoScreen() {
           nome: alt.nome,
           texto: alt.texto,
           correta: alt.correta,
-        }),
+        })
       );
 
       await Promise.all(alternativasPromises);
 
-      Swal.fire({
-        icon: "success",
-        title: "Sucesso",
-        text: "Questão criada com sucesso!",
-      });
+      Alert.alert("Sucesso", "Questão criada com sucesso!");
 
       // Limpar formulário
       setNumeroQuestao("");
@@ -164,11 +144,7 @@ export default function CriarQuestaoScreen() {
       ]);
     } catch (error) {
       console.error("Erro ao salvar questão:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Erro",
-        text: "Erro ao salvar a questão. Tente novamente.",
-      });
+      Alert.alert("Erro", "Erro ao salvar a questão. Tente novamente.");
     } finally {
       setSalvando(false);
     }

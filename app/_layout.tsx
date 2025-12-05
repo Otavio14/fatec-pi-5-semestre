@@ -1,26 +1,18 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Fragment, useState } from "react";
 import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Sidebar } from "../components/sidebar";
 import { IconSymbol } from "../components/ui/icon-symbol";
-import { Colors } from "../constants/theme";
 
 export const unstable_settings = {
   anchor: "(tabs)",
 };
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
   return (
@@ -54,8 +46,6 @@ function Header({
 }: {
   setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-  const colorScheme = useColorScheme();
-  const iconColor = Colors[colorScheme ?? "light"].tint;
   const router = useRouter();
 
   return (
